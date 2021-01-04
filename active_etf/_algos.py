@@ -4,7 +4,7 @@
 # # Tools
 
 # In[1]:
-
+import pandas as pd
 
 import sys
 from PyQt5.QtWidgets import *
@@ -20,6 +20,7 @@ form_class = uic.loadUiType("_pytrader.ui")[0]
 class Algos(QMainWindow, form_class):
 
     def __init__(self):
+        
         super().__init__()
         self.setupUi(self)
         self.trade_stocks_done = False                
@@ -28,6 +29,8 @@ class Algos(QMainWindow, form_class):
         
         self.account = 5624118510
         self.leverage = 1
+
+        self.kodex_kospi = [] ; self.tiger_kospi = [] 
 
 #       self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    
     def buy_kodex(self,leverage):
@@ -60,7 +63,7 @@ class Algos(QMainWindow, form_class):
 
         leverage = 1
 
-        count_kodex = 30
+        count_kodex = 30  #초기 종목 개수
         count_tiger = 30
         count_kospi = 60
 
@@ -75,32 +78,34 @@ class Algos(QMainWindow, form_class):
             self.kiwoom.get_real_data(code)
         
         price = self.kiwoom.price
-        rate = self.kiwoom.rate
+        ret = self.kiwoom.rate
         print(price)
-        print(rate)
-
-        kospi_price = [] ; kodex_price = [] ;tiger_price = [] 
-        kospi_ret = [] ; kodex_ret = [] ;tiger_ret = [] 
+        print(ret)
         
         if len(price)!=3:
             pass
         else:
-            kospi_price.append(price['069500']); kodex_price.append(price['364690']) ; tiger_price.append(price['365040'])
-            kospi_ret.append(rate['069500'])   ; kodex_ret.append(rate['364690'])    ; tiger_ret.append(rate['365040'])
+            kospi_price=price['069500']; kodex_price=price['364690'] ; tiger_price=price['365040']
+            kospi_ret=rate['069500']   ; kodex_ret=rate['364690']   ; tiger_ret=rate['365040']
 
-            kodex_kospi = kodex_ret[-1] - kospi_ret[-1]
-            tiger_kospi = tiger_ret[-1] - kospi_ret[-1]
+            self.kodex_kospi.append(kodex_ret - kospi_ret)
+            self.tiger_kospi.append(tiger_ret - kospi_ret)
 
-            if kodex_kospi > threshold_buy:
-                print(round(kodex_kospi,4))
+        if len(self.kodex_kospi)>=60:
+            
+            kodex_kospi = pd.Series(self.kodex_kospi)
+            threshold_kodex = kodex_kospi.rolling(window=100,center=False).mean()
+            
+            if kodex_kospi.iloc[-1] > threshold_kodex.iloc[-1]:
+                print(round(kodex_kospi.iloc[-1],4))
                 self.sell_kodex(kodex_price,leverage)
                 self.buy_kospi(kospi_price,leverage)
-            elif kodex_kospi < - threshold_buy:
-                print(round(kodex_kospi,4))
+            elif kodex_kospi.iloc[-1] < - threshold_kodex.iloc[-1]:
+                print(round(kodex_kospi.iloc[-1],4))
                 self.buy_kodex(kodex_price,leverage)
                 self.sell_kospi(kospi_price,leverage)
-            elif abs(kodex_kospi) < threshold_sell:
-                print(round(kodex_kospi,4))
+            elif abs(kodex_kospi.iloc[-1]) < threshold_kodex.iloc[-1]:
+                print(round(kodex_kospi.iloc[-1],4))
                 if amount[kodex] < count_kodex:
                     self.buy_kodex(kodex_price,leverage)
                     self.sell_kospi(kospi_price,count_kodex-amount[kodex])
@@ -109,17 +114,24 @@ class Algos(QMainWindow, form_class):
                     self.buy_inverse(kospi_price,amount[kodex]-count_kodex)
             else:
                 pass
-
-            if tiger_kospi > threshold_buy:
-                print(round(tiger_kospi,4))
+        else:
+            pass
+        
+        if len(tiger_ret)>=60:
+            
+            tiger_kospi = pd.Series(tiger_kospi)           
+            threshold_tiger = tiger_kospi.rolling(window=100,center=False).mean()
+            
+            if tiger_kospi.iloc[-1] > threshold_tiger.iloc[-1]:
+                print(round(tiger_kospi.iloc[-1],4))
                 self.sell_tiger(tiger_price,leverage)
                 self.buy_kospi(kospi_price,leverage)
-            elif tiger_kospi < - threshold_buy:
-                print(round(tiger_kospi,4))
+            elif tiger_kospi.iloc[-1] < - threshold_tiger.iloc[-1]:
+                print(round(tiger_kospi.iloc[-1],4))
                 self.buy_tiger(tiger_price,leverage)
                 self.sell_kospi(kospi_price,leverage)
-            elif abs(tiger_kospi) < threshold_sell:
-                print(round(tiger_kospi,4))
+            elif abs(tiger_kospi.iloc[-1]) < threshold_tiger.iloc[-1]:
+                print(round(tiger_kospi.iloc[-1],4))
                 if amount[tiger] < count_tiger:
                     self.buy_tiger(tiger_price,leverage)
                     self.sell_kospi(kospi_price,count_tiger-amount[tiger])
