@@ -73,7 +73,7 @@ class Kiwoom(QAxWidget):
         
     def get_real_data(self,code): 
 #         print(1,code)
-        self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '0101',code,'10','1')
+        self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '1000',code,'568','1')
         self.real_event_loop = QEventLoop()
         self.real_event_loop.exec_()
             

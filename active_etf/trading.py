@@ -21,12 +21,11 @@ form_class = uic.loadUiType("_pytrader.ui")[0]
 
 # In[ ]:
 
-print(1)
+
 app = QApplication(sys.argv)
 algo = Algos()
-app.exec_() 
 print('-------------------------------거래시작------------------------------------')
 while now.strftime('%H%M%S') != 152101:
     algo.zero()
     time.sleep(1)
-
+app.exec_() 
