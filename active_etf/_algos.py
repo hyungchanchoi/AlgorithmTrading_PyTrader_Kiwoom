@@ -32,7 +32,7 @@ class Algos(QMainWindow, form_class):
         self.leverage = 1
 
         self.kodex_cumret = [] ; self.tiger_cumret = [] 
-        self.kodex_kospi = [] ; self.tiger_kospi = [] 
+        self.kodex_tiger=[]
 
 #       self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    00:지정가, 03 :시장가
     def buy_kodex(self,price,leverage):
@@ -67,12 +67,14 @@ class Algos(QMainWindow, form_class):
         count_tiger = 40  #초기 종목 개수
         count_kodex = 40
 
+        kospi = 'KODEX 200                 '
         kodex = 'KODEX 혁신기술테마액티브'
-        tiger = 'TIGER AI코리아그로스액티브'        
-        codes = ['364690','365040'] ; self.kiwoom.codes = codes
+        tiger = 'TIGER AI코리아그로스액티브'       
+        codes = ['069500','364690','365040'] ; self.kiwoom.codes = codes
 
         amount = self.kiwoom.amount
         print(amount)        
+
         for code in codes:
             self.kiwoom.get_real_data(code)
         
@@ -86,36 +88,45 @@ class Algos(QMainWindow, form_class):
         else:
             kodex_price=price['364690'] ; tiger_price=price['365040']           
             self.kodex_tiger.append(kodex_price/10005 - tiger_price/10085 ) 
-            print(len(self.kodex_tiger),'/100')
+            if len(self.kodex_tiger) <= 100:
+                print(len(self.kodex_tiger),'/100')
 
-        if len(self.kodex_tiger)>100:
-            del self.kodex_tiger[0]
+            amount_kodex=int(amount[kodex])
+
+
+        if len(self.kodex_tiger)>=100:
+
             cumret_spread = pd.Series(self.kodex_tiger)
             threshold = cumret_spread.rolling(window=100,center=False).mean()
-            
+            print('spread :',round(cumret_spread.iloc[-1],4),
+                  'threshold :',round(threshold.iloc[-1],4))
+
             if cumret_spread.iloc[-1] > threshold.iloc[-1]:
-                print(round(cumret_spread.iloc[-1],4))
-                self.sell_kodex(kodex_price,leverage)
-                self.buy_tiger(tiger_price,leverage)
+                print('short position')
+                self.sell_kodex(0,leverage)
+                self.buy_tiger(0,leverage)
             elif cumret_spread.iloc[-1] < - threshold.iloc[-1]:
-                print(round(cumret_spread.iloc[-1],4))
-                self.buy_kodex(kodex_price,leverage)
-                self.sell_tiger(tiger_price,leverage)
+                print('long position')
+                self.buy_kodex(0,leverage)
+                self.sell_tiger(0,leverage)
             elif abs(cumret_spread.iloc[-1]) < threshold.iloc[-1]*0.8:
-                print(round(cumret_spread.iloc[-1],4))
+                print('close position')
                 try:
-                    if amount[kodex] < count_kodex:
-                        self.buy_kodex(kodex_price,count_kodex-amount[kodex])
-                        self.sell_tiger(tiger_price,count_kodex-amount[kodex])
-                    elif amount[kodex] > count_kodex:
-                        self.sell_kodex(kodex_price,amount[kodex]-count_kodex)
-                        self.buy_tiger(tiger_price,amount[kodex]-count_kodex)
+                    amount_kodex=int(amount[kodex])
+                    amount_tiger=int(amount[tiger])
+                    if amount_kodex < count_kodex and amount[tiger]>=1:
+                        self.buy_kodex(0,count_kodex-amount_kodex)
+                        self.sell_tiger(0,count_kodex-amount_kodex)
+                    elif amount_kodex > count_kodex and amount[kodex]>=1:
+                        self.sell_kodex(0,amount_kodex-count_kodex)
+                        self.buy_tiger(0,amount_kodex-count_kodex)
                 except:
                     pass
             else:
                 pass
         
-    print('------------------------------------------------------------------------------')
+        print('------------------------------------------------------------------------------')
+
 ################################################### Algo_2##########################################################
     def two(self):
     
@@ -205,7 +216,7 @@ class Algos(QMainWindow, form_class):
                     pass
             else:
                 pass
-    print('------------------------------------------------------------------------------')
+        print('------------------------------------------------------------------------------')
 
 ################################################### Algo_3##########################################################
 def three(self):
@@ -289,4 +300,4 @@ def three(self):
                     self.buy_kospi(kospi_price,amount[tiger]-count_tiger)
             else:
                 pass
-print('------------------------------------------------------------------------------')
+        print('------------------------------------------------------------------------------')

@@ -65,12 +65,14 @@ class Kiwoom(QAxWidget):
         
     def get_chejan_data(self, fid):
         ret = self.dynamicCall("GetChejanData(int)", fid)
-        return ret
+        ret_ = ret.rstrip()
+        return ret_
     
     def _receive_chejan_data(self, gubun, item_cnt, fid_list):
-        print('[',self.get_chejan_data(908),']',self.get_chejan_data(302),':',self.get_chejan_data(905),                                                              self.get_chejan_data(900),'주',self.get_chejan_data(10),'원')
+        print('[',self.get_chejan_data(908),']',self.get_chejan_data(302),':',self.get_chejan_data(905), 
+                     self.get_chejan_data(900),'주',self.get_chejan_data(10),'원')
         self.amount[self.get_chejan_data(302)] = self.get_chejan_data(930)
-        
+
     def get_real_data(self,code): 
 #         print(1,code)
         self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '1000',code,'568','1')

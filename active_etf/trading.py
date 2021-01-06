@@ -26,6 +26,6 @@ app = QApplication(sys.argv)
 algo = Algos()
 print('-------------------------------거래시작------------------------------------')
 while now.strftime('%H%M%S') != 152101:
-    algo.zero()
-    time.sleep(1)
+    algo.one()
+    time.sleep(3)
 app.exec_() 
