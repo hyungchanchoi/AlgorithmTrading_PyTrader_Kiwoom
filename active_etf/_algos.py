@@ -32,7 +32,7 @@ class Algos(QMainWindow, form_class):
         self.leverage = 1
 
         self.kodex_cumret = [] ; self.tiger_cumret = [] 
-        self.kodex_tiger=[]
+        self.short_spread=[] ; self.long_spread=[]
 
 #       self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    00:지정가, 03 :시장가
     def buy_kodex(self,price,leverage):
@@ -80,44 +80,53 @@ class Algos(QMainWindow, form_class):
         
         price = self.kiwoom.price
         ret = self.kiwoom.rate
+        bid_price = self.kiwoom.bid_price
+        ask_price = self.kiwoom.ask_price
         print(price)
         print(ret)
         
         if len(price)!=3:
             pass
         else:
-            kodex_price=price['364690'] ; tiger_price=price['365040']           
-            self.kodex_tiger.append(kodex_price/10005 - tiger_price/10085 ) 
-            if len(self.kodex_tiger) <= 100:
-                print(len(self.kodex_tiger),'/100')
+            kodex_bid_price=bid_price['364690'] ; tiger_bid_price=bid_price['365040']  
+            kodex_ask_price=ask_price['364690'] ; tiger_ask_price=ask_price['365040']         
+            
+            self.short_spread.append(kodex_ask_price - tiger_bid_price ) 
+            self.long_spread.append(kodex_bid_price - tiger_ask_price ) 
+            
+            if len(self.short_spread) <= 60:
+                print(len(self.short_spread),'/60')
+
+
+        if len(self.short_spread)>=60:
 
             amount_kodex=int(amount[kodex])
+            amount_tiger=int(amount[tiger])
 
+            short_spread = pd.Series(self.short_spread)
+            long_spread = pd.Series(self.long_spread)
 
-        if len(self.kodex_tiger)>=100:
+            threshold_short = short_spread.rolling(window=60,center=False).mean()
+            threshold_long = long_spread.rolling(window=60,center=False).mean()
 
-            cumret_spread = pd.Series(self.kodex_tiger)
-            threshold = cumret_spread.rolling(window=100,center=False).mean()
-            print('spread :',round(cumret_spread.iloc[-1],4),
-                  'threshold :',round(threshold.iloc[-1],4))
+            print('short_spread :',round(short_spread.iloc[-1],4), 'short_threshold :',round(threshold_short.iloc[-1],4))
+            print('long_spread :',round(long_spread.iloc[-1],4), 'long_threshold :',round(threshold_long.iloc[-1],4))
 
-            if cumret_spread.iloc[-1] > threshold.iloc[-1]:
+            if short_spread.iloc[-1] > threshold_short.iloc[-1] and amount_kodex >=1:
                 print('short position')
                 self.sell_kodex(0,leverage)
                 self.buy_tiger(0,leverage)
-            elif cumret_spread.iloc[-1] < - threshold.iloc[-1]:
+            elif long_spread.iloc[-1] < - threshold_long.iloc[-1] and amount_tiger >=1 :
                 print('long position')
                 self.buy_kodex(0,leverage)
                 self.sell_tiger(0,leverage)
-            elif abs(cumret_spread.iloc[-1]) < threshold.iloc[-1]*0.8:
+            elif abs(short_spread.iloc[-1]) < threshold_short.iloc[-1]*0.8 or abs(long_spread.iloc[-1]) < threshold_long.iloc[-1]*0.8:
                 print('close position')
-                try:
-                    amount_kodex=int(amount[kodex])
-                    amount_tiger=int(amount[tiger])
-                    if amount_kodex < count_kodex and amount[tiger]>=1:
+                try:                    
+                    if amount_kodex < count_kodex :
                         self.buy_kodex(0,count_kodex-amount_kodex)
                         self.sell_tiger(0,count_kodex-amount_kodex)
-                    elif amount_kodex > count_kodex and amount[kodex]>=1:
+                    elif amount_kodex > count_kodex :
                         self.sell_kodex(0,amount_kodex-count_kodex)
                         self.buy_tiger(0,amount_kodex-count_kodex)
                 except:
@@ -126,6 +135,7 @@ class Algos(QMainWindow, form_class):
                 pass
         
         print('------------------------------------------------------------------------------')
+
 
 ################################################### Algo_2##########################################################
     def two(self):

@@ -17,6 +17,8 @@ class Kiwoom(QAxWidget):
         self.price = {}
         self.rate = {}
         self.amount = {}
+        self.bid_price = {} #매수호가
+        self.ask_price = {} #매도호가
         
 #         self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '0101','','215','0')  #실시간구분
 
@@ -81,11 +83,14 @@ class Kiwoom(QAxWidget):
             
     def _receive_real_data(self, code, realtype, realdata):   
 #         print(2,code)
+        temp_ask_price = self.dynamicCall("GetCommRealData(QString,int)",code,27)  #매도호가
+        temp_bid_price = self.dynamicCall("GetCommRealData(QString,int)",code,28)  #매수호가
         temp_price = self.dynamicCall("GetCommRealData(QString,int)",code,10)
         temp_rate = self.dynamicCall("GetCommRealData(QString,int)",code,12)                  
         self.price[code] = int(temp_price)
         self.rate[code] = float(temp_rate)
-    #         self.dynamicCall("SetRealRemove(QString,int)",'0101',temp_code)
+        self.bid_price[code] = int(temp_bid_price)
+        self.ask_price[code] = int(temp_ask_price)
         self.real_event_loop.exit()
 
                         
