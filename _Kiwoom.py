@@ -73,27 +73,37 @@ class Kiwoom(QAxWidget):
     def _receive_chejan_data(self, gubun, item_cnt, fid_list):
         print('[',self.get_chejan_data(908),']',self.get_chejan_data(302),':',self.get_chejan_data(905), 
                      self.get_chejan_data(900),'주',self.get_chejan_data(10),'원')
-        self.amount[self.get_chejan_data(302)] = self.get_chejan_data(930)
+        # self.amount[self.get_chejan_data(302)] = self.get_chejan_data(930)
 
     def get_real_data(self,code): 
 #         print(1,code)
         self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '1000',code,'568','1')
         self.real_event_loop = QEventLoop()
         self.real_event_loop.exec_()
+
+    def get_jango_data(self,code): 
+#         print(1,code)
+        self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '2000',code,'930','1')
+        self.real_event_loop = QEventLoop()
+        self.real_event_loop.exec_()
             
     def _receive_real_data(self, code, realtype, realdata):   
-#         print(2,code)
-        temp_ask_price = self.dynamicCall("GetCommRealData(QString,int)",code,27)  #매도호가
-        temp_bid_price = self.dynamicCall("GetCommRealData(QString,int)",code,28)  #매수호가
-        temp_price = self.dynamicCall("GetCommRealData(QString,int)",code,10)
-        temp_rate = self.dynamicCall("GetCommRealData(QString,int)",code,12)                  
-        self.price[code] = int(temp_price)
-        self.rate[code] = float(temp_rate)
-        self.bid_price[code] = int(temp_bid_price)
-        self.ask_price[code] = int(temp_ask_price)
-        self.real_event_loop.exit()
+        print(2,realtype)
+        if realtype =='주식체결':
+            temp_ask_price = self.dynamicCall("GetCommRealData(QString,int)",code,27)  #매도호가
+            temp_bid_price = self.dynamicCall("GetCommRealData(QString,int)",code,28)  #매수호가
+            temp_price = self.dynamicCall("GetCommRealData(QString,int)",code,10)
+            temp_rate = self.dynamicCall("GetCommRealData(QString,int)",code,12)                  
+            self.price[code] = int(temp_price)
+            self.rate[code] = float(temp_rate)
+            self.bid_price[code] = int(temp_bid_price)
+            self.ask_price[code] = int(temp_ask_price)
+            self.real_event_loop.exit()
+        if realtype == '잔고':
+            # self.amount[self.dynamicCall("GetCommRealData(QString,int)",code,302) ] = self.dynamicCall("GetCommRealData(QString,int)",code,) 
+            print(self.dynamicCall("GetCommRealData(QString,int)",code,302) ,self.dynamicCall("GetCommRealData(QString,int)",code,930) )
+                                
 
-                        
     def get_login_info(self, tag):
         ret = self.dynamicCall("GetLoginInfo(QString)", tag)
         return ret 
