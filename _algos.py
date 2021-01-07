@@ -1,9 +1,3 @@
-
-# coding: utf-8
-
-# # Tools
-
-# In[1]:
 import pandas as pd
 import numpy as np
 
@@ -11,7 +5,7 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5 import uic
-from _Kiwoom import *
+from _kiwoom import *
 import time
 from datetime import datetime,timedelta
 now = datetime.now()
@@ -29,11 +23,11 @@ class Algos(QMainWindow, form_class):
         self.kiwoom.comm_connect()
         
         self.account = 5624118510
-        self.leverage = 1
-        self.amount_ = False
 
         self.kodex_cumret = [] ; self.tiger_cumret = [] 
         self.spread = []
+
+        self.one_codes = '069500;364690;365040'
 
 #       self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    00:지정가, 03 :시장가
     def buy_kodex(self,price,leverage):
@@ -60,6 +54,7 @@ class Algos(QMainWindow, form_class):
     def sell_inverse(self,price,leverage):
         self.kiwoom.send_order("send_order_req", "0101", self.account, 2, 114800, leverage, price, '03', "")
 
+
 ################################################### Algo_1##########################################################
     def one(self):
     
@@ -71,23 +66,22 @@ class Algos(QMainWindow, form_class):
         kospi = 'KODEX 200'
         kodex = 'KODEX 혁신기술테마액티브'
         tiger = 'TIGER AI코리아그로스액티브'       
-        codes = ['069500','364690','365040'] ; self.kiwoom.codes = codes
         
-        if self.amount_ == False:
-            self.kiwoom.amount[kodex] = 40
-            self.kiwoom.amount[tiger] = 40 
-            amount = self.kiwoom.amount      
-            amount_kodex = int(amount[kodex])
-            amount_tiger = int(amount[tiger])        
-        elif self.amount_ == True:
-            amount = self.kiwoom.amount
-            amount_kodex = int(amount[kodex])
-            amount_tiger = int(amount[tiger])
+        # if self.amount_ == False:
+        #     self.kiwoom.amount[kodex] = 40
+        #     self.kiwoom.amount[tiger] = 40 
+        #     amount = self.kiwoom.amount      
+        #     amount_kodex = int(amount[kodex])
+        #     amount_tiger = int(amount[tiger])        
+        # elif self.amount_ == True:
+        #     amount = self.kiwoom.amount
+        #     amount_kodex = int(amount[kodex])
+        #     amount_tiger = int(amount[tiger])
+        
+        self.kiwoom.get_amount()
+        amount = self.kiwoom.amount
+        print(amount)
                     
-        for code in codes:
-            self.kiwoom.get_real_data(code)
-
-        self.kiwoom.get_jango_data(codes)
         price = self.kiwoom.price
         ret = self.kiwoom.rate
         bid_price = self.kiwoom.bid_price
@@ -118,31 +112,27 @@ class Algos(QMainWindow, form_class):
 
             print('spread :',round(spread.iloc[-1],4), 'threshold :',round(threshold.iloc[-1],4))
 
-            if spread.iloc[-1] > threshold.iloc[-1] and amount_kodex >=1:
+            if spread.iloc[-1] > threshold.iloc[-1] and amount[kodex] >=1:
                 print('short position')
                 self.sell_kodex(0,leverage)
                 self.buy_tiger(0,leverage)
-                self.amount_ = True
-            elif spread.iloc[-1] < - threshold.iloc[-1] and amount_tiger>=1 :
+
+            elif spread.iloc[-1] < - threshold.iloc[-1] and amount[tiger]>=1 :
                 print('long position')
                 self.buy_kodex(0,leverage)
                 self.sell_tiger(0,leverage)
-                self.amount_ = True
-            elif abs(spread.iloc[-1]) < threshold.iloc[-1]*0.8 :
+
+            elif abs(spread.iloc[-1]) < threshold.iloc[-1] :
                 print('close position')                    
-                if amount_kodex < count_kodex :
-                    self.buy_kodex(0,count_kodex-amount_kodex)
-                    self.sell_tiger(0,count_kodex-amount_kodex)
-                elif amount_kodex > count_kodex :
-                    self.sell_kodex(0,amount_kodex-count_kodex)
-                    self.buy_tiger(0,amount_kodex-count_kodex)
-            time.sleep(3)
+                if amount[kodex] < count_kodex :
+                    self.buy_kodex(0,count_kodex-amount[kodex])
+                    self.sell_tiger(0,count_kodex-amount[kodex])
+                elif amount[kodex] > count_kodex :
+                    self.sell_kodex(0,amount[kodex]-count_kodex)
+                    self.buy_tiger(0,amount[kodex]-count_kodex)
         else:
             pass
-  
-        if self.amount_ == True:
-            amount = self.kiwoom.amount
-        print(amount[kodex],amount[tiger])     
+
 
         print('------------------------------------------------------------------------------')
 

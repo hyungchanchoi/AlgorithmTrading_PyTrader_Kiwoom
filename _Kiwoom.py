@@ -2,112 +2,176 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
+from _algos import *
 import time
 import pandas as pd
 import sqlite3
 
 TR_REQ_TIME_INTERVAL = 0.2
 
+
 class Kiwoom(QAxWidget):
     def __init__(self):
         super().__init__()
-        self._create_kiwoom_instance()
-        self._set_signal_slots()
-        
+
+#### 이벤트 처리 ##########################################################
+        self.ocx = QAxWidget("KHOPENAPI.KHOpenAPICtrl.1")
+        self.ocx.OnEventConnect.connect(self._handler_login)
+        self.ocx.OnReceiveTrData.connect(self._handler_tr_data)
+        self.ocx.OnReceiveRealData.connect(self._handler_real_data)
+        self.ocx.OnReceiveChejanData.connect(self._handler_chejan_data)
+##########################################################################
+
+
+#### 변수 #################################################################
         self.price = {}
         self.rate = {}
         self.amount = {}
-        self.bid_price = {} #매수호가
-        self.ask_price = {} #매도호가
-        
-#         self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '0101','','215','0')  #실시간구분
+        self.bid_price = {}  # 매수호가
+        self.ask_price = {}  # 매도호가
+##########################################################################
 
-    def _create_kiwoom_instance(self):
-        self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
 
-    def _set_signal_slots(self):
-        self.OnEventConnect.connect(self._event_connect)
-#         self.OnReceiveTrData.connect(self._receive_tr_data)
-        self.OnReceiveChejanData.connect(self._receive_chejan_data)
-        self.OnReceiveRealData.connect(self._receive_real_data)
-        
-    def comm_connect(self):
-        self.dynamicCall("CommConnect()")
+#### 로그인 처리 #########################################################
         self.login_event_loop = QEventLoop()
-        self.login_event_loop.exec_()
+        self.CommConnect()          # 로그인이 될 때까지 대기
+        self.account = self.GetLoginInfo("ACCNO").split(';')[0]
+##########################################################################
 
-    def _event_connect(self, err_code):
+
+#### 실시간 등록 #########################################################
+        # self.subscribe_market_time('1')
+        self.subscribe_stock_conclusion('2000', Algos.one_codes)
+##########################################################################
+
+
+#--------------------------------------------------------------------------------------------------------------
+#함수
+
+
+#### 로그인 ##############################################################
+    def CommConnect(self):
+        self.ocx.dynamicCall("CommConnect()")
+        self.login_event_loop.exec()
+
+    def _handler_login(self, err_code):
         if err_code == 0:
-            print("connected")
-        else:
-            print("disconnected")
-
+            pass
         self.login_event_loop.exit()
 
-    def get_code_list_by_market(self, market):
-        code_list = self.dynamicCall("GetCodeListByMarket(QString)", market)
-        code_list = code_list.split(';')
-        return code_list[:-1]
+    def GetLoginInfo(self, tag):
+        data = self.ocx.dynamicCall("GetLoginInfo(QString)", tag)
+        return data
+##########################################################################
 
-    def get_master_code_name(self, code):
-        code_name = self.dynamicCall("GetMasterCodeName(QString)", code)
-        return code_name
 
-    def get_connect_state(self):
-        ret = self.dynamicCall("GetConnectState()")
+#### 예수금, 종목수량 #####################################################
+
+    def get_amount(self):
+        # TR 요청
+        self.request_opw00001()
+        self.request_opw00004()
+
+    def request_opw00001(self):
+        self.SetInputValue("계좌번호", self.account)
+        self.SetInputValue("비밀번호", "")
+        self.SetInputValue("비밀번호입력매체구분", "00")
+        self.SetInputValue("조회구분", 2)
+        self.CommRqData("예수금조회", "opw00001", 0, "9001")
+        self.login_event_loop.exec()
+
+    def request_opw00004(self):
+        self.SetInputValue("계좌번호", self.account)
+        self.SetInputValue("비밀번호", "")
+        self.SetInputValue("상장폐지조회구분", 0)
+        self.SetInputValue("비밀번호입력매체구분", "00")
+        self.CommRqData("계좌평가현황", "opw00004", 0, "9002")
+        self.login_event_loop.exec()
+
+    def GetRepeatCnt(self, trcode, rqname):
+        ret = self.ocx.dynamicCall(
+            "GetRepeatCnt(QString, QString)", trcode, rqname)
         return ret
 
-    def set_input_value(self, id, value):
-        self.dynamicCall("SetInputValue(QString, QString)", id, value)
-            
+    def _handler_tr_data(self, screen_no, rqname, trcode, record, next):
+        if rqname == "예수금조회":
+            주문가능금액 = self.GetCommData(trcode, rqname, 0, "주문가능금액")
+            self.cash = int(주문가능금액)
+            self.login_event_loop.exit()
 
-    def send_order(self, rqname, screen_no, acc_no, order_type, code, quantity, price, hoga, order_no):
-        self.dynamicCall("SendOrder(QString, QString, QString, int, QString, int, int, QString, QString)",
-                     [rqname, screen_no, acc_no, order_type, code, quantity, price, hoga, order_no])
-        
-    def get_chejan_data(self, fid):
-        ret = self.dynamicCall("GetChejanData(int)", fid)
-        ret_ = ret.rstrip()
-        return ret_
-    
-    def _receive_chejan_data(self, gubun, item_cnt, fid_list):
-        print('[',self.get_chejan_data(908),']',self.get_chejan_data(302),':',self.get_chejan_data(905), 
-                     self.get_chejan_data(900),'주',self.get_chejan_data(10),'원')
-        # self.amount[self.get_chejan_data(302)] = self.get_chejan_data(930)
+        elif rqname == "계좌평가현황":
+            rows = self.GetRepeatCnt(trcode, rqname)
+            for i in range(rows):
+                code = self.GetCommData(trcode, rqname, i, "종목명")
+                amount_ = self.GetCommData(trcode, rqname, i, "보유수량")
+                self.amount[code] = int(amount_)
+            self.login_event_loop.exit()
 
-    def get_real_data(self,code): 
-#         print(1,code)
-        self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '1000',code,'568','1')
-        self.real_event_loop = QEventLoop()
-        self.real_event_loop.exec_()
+##########################################################################
 
-    def get_jango_data(self,code): 
-#         print(1,code)
-        self.dynamicCall("SetRealReg(QString,QString,QString,QString)", '2000',code,'930','1')
-        self.real_event_loop = QEventLoop()
-        self.real_event_loop.exec_()
-            
-    def _receive_real_data(self, code, realtype, realdata):   
-        print(2,realtype)
-        if realtype =='주식체결':
-            temp_ask_price = self.dynamicCall("GetCommRealData(QString,int)",code,27)  #매도호가
-            temp_bid_price = self.dynamicCall("GetCommRealData(QString,int)",code,28)  #매수호가
-            temp_price = self.dynamicCall("GetCommRealData(QString,int)",code,10)
-            temp_rate = self.dynamicCall("GetCommRealData(QString,int)",code,12)                  
+
+#### 실시간 ###############################################################
+
+    def subscribe_stock_conclusion(self, screen_no, codes):
+        self.SetRealReg(screen_no, codes, "20", 0)
+
+    def _handler_real_data(self, code, realtype, realdata):
+        if realtype == '주식체결':
+            temp_ask_price = self.ocx.dynamicCall(
+                "GetCommRealData(QString,int)", code, 27)  # 매도호가
+            temp_bid_price = self.ocx.dynamicCall(
+                "GetCommRealData(QString,int)", code, 28)  # 매수호가
+            temp_price = self.ocx.dynamicCall(
+                "GetCommRealData(QString,int)", code, 10)
+            temp_rate = self.ocx.dynamicCall(
+                "GetCommRealData(QString,int)", code, 12)
             self.price[code] = int(temp_price)
             self.rate[code] = float(temp_rate)
             self.bid_price[code] = int(temp_bid_price)
             self.ask_price[code] = int(temp_ask_price)
-            self.real_event_loop.exit()
-        if realtype == '잔고':
-            # self.amount[self.dynamicCall("GetCommRealData(QString,int)",code,302) ] = self.dynamicCall("GetCommRealData(QString,int)",code,) 
-            print(self.dynamicCall("GetCommRealData(QString,int)",code,302) ,self.dynamicCall("GetCommRealData(QString,int)",code,930) )
-                                
 
-    def get_login_info(self, tag):
-        ret = self.dynamicCall("GetLoginInfo(QString)", tag)
-        return ret 
+    def get_chejan_data(self, fid):
+        ret = self.ocx.dynamicCall("GetChejanData(int)", fid)
+        ret_ = ret.rstrip()
+        return ret_
+        self.login_event_loop.exec()
 
-    def get_server_gubun(self):
-        ret = self.dynamicCall("KOA_Functions(QString, QString)", "GetServerGubun", "")
-        return ret
+    def _receive_chejan_data(self, gubun, item_cnt, fid_list):
+        print('[', self.get_chejan_data(908), ']', self.get_chejan_data(302), ':', self.get_chejan_data(905),
+              self.get_chejan_data(900), '주', self.get_chejan_data(10), '원')
+        self.login_event_loop.exit()
+
+#### 메소드 ###############################################################
+
+    def SetInputValue(self, id, value):
+        self.ocx.dynamicCall("SetInputValue(QString, QString)", id, value)
+
+    def CommRqData(self, rqname, trcode, next, screen_no):
+        self.ocx.dynamicCall("CommRqData(QString, QString, int, QString)",
+                             rqname, trcode, next, screen_no)
+
+    def GetCommData(self, trcode, rqname, index, item):
+        data = self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)",
+                                    trcode, rqname, index, item)
+        return data.strip()
+
+    def SetRealReg(self, screen_no, code_list, fid_list, real_type):
+        self.ocx.dynamicCall("SetRealReg(QString, QString, QString, QString)",
+                             screen_no, code_list, fid_list, real_type)
+
+    def GetCommRealData(self, code, fid):
+        data = self.ocx.dynamicCall("GetCommRealData(QString, int)", code, fid)
+        return data
+
+    def DisConnectRealData(self, screen_no):
+        self.ocx.dynamicCall("DisConnectRealData(QString)", screen_no)
+
+    def SendOrder(self, rqname, screen, accno, order_type, code, quantity, price, hoga, order_no):
+        self.ocx.dynamicCall("SendOrder(QString, QString, QString, int, QString, int, int, QString, QString)",
+                             [rqname, screen, accno, order_type, code, quantity, price, hoga, order_no])
+
+    def GetChejanData(self, fid):
+        data = self.ocx.dynamicCall("GetChejanData(int)", fid)
+        return data
+
+##########################################################################
