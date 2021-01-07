@@ -30,6 +30,7 @@ class Algos(QMainWindow, form_class):
         
         self.account = 5624118510
         self.leverage = 1
+        self.amount_ = False
 
         self.kodex_cumret = [] ; self.tiger_cumret = [] 
         self.spread = []
@@ -71,13 +72,22 @@ class Algos(QMainWindow, form_class):
         kodex = 'KODEX 혁신기술테마액티브'
         tiger = 'TIGER AI코리아그로스액티브'       
         codes = ['069500','364690','365040'] ; self.kiwoom.codes = codes
-
-        amount = self.kiwoom.amount
-        print(amount)        
-
+        
+        if self.amount_ == False:
+            self.kiwoom.amount[kodex] = 40
+            self.kiwoom.amount[tiger] = 40 
+            amount = self.kiwoom.amount      
+            amount_kodex = int(amount[kodex])
+            amount_tiger = int(amount[tiger])        
+        elif self.amount_ == True:
+            amount = self.kiwoom.amount
+            amount_kodex = int(amount[kodex])
+            amount_tiger = int(amount[tiger])
+                    
         for code in codes:
             self.kiwoom.get_real_data(code)
-        
+
+        self.kiwoom.get_jango_data(codes)
         price = self.kiwoom.price
         ret = self.kiwoom.rate
         bid_price = self.kiwoom.bid_price
@@ -101,10 +111,7 @@ class Algos(QMainWindow, form_class):
 
 
         if len(self.spread)>=60:
-
-            amount_kodex=int(amount[kodex])
-            amount_tiger=int(amount[tiger])
-
+ 
             spread = pd.Series(self.spread)
 
             threshold = spread.rolling(window=60,center=False).mean()
@@ -115,24 +122,28 @@ class Algos(QMainWindow, form_class):
                 print('short position')
                 self.sell_kodex(0,leverage)
                 self.buy_tiger(0,leverage)
-            elif spread.iloc[-1] < - threshold.iloc[-1] and amount_tiger >=1 :
+                self.amount_ = True
+            elif spread.iloc[-1] < - threshold.iloc[-1] and amount_tiger>=1 :
                 print('long position')
                 self.buy_kodex(0,leverage)
                 self.sell_tiger(0,leverage)
+                self.amount_ = True
             elif abs(spread.iloc[-1]) < threshold.iloc[-1]*0.8 :
-                print('close position')
-                try:                    
-                    if amount_kodex < count_kodex :
-                        self.buy_kodex(0,count_kodex-amount_kodex)
-                        self.sell_tiger(0,count_kodex-amount_kodex)
-                    elif amount_kodex > count_kodex :
-                        self.sell_kodex(0,amount_kodex-count_kodex)
-                        self.buy_tiger(0,amount_kodex-count_kodex)
-                except:
-                    pass
-            else:
-                pass
-        
+                print('close position')                    
+                if amount_kodex < count_kodex :
+                    self.buy_kodex(0,count_kodex-amount_kodex)
+                    self.sell_tiger(0,count_kodex-amount_kodex)
+                elif amount_kodex > count_kodex :
+                    self.sell_kodex(0,amount_kodex-count_kodex)
+                    self.buy_tiger(0,amount_kodex-count_kodex)
+            time.sleep(3)
+        else:
+            pass
+  
+        if self.amount_ == True:
+            amount = self.kiwoom.amount
+        print(amount[kodex],amount[tiger])     
+
         print('------------------------------------------------------------------------------')
 
 
@@ -225,6 +236,7 @@ class Algos(QMainWindow, form_class):
                     pass
             else:
                 pass
+
         print('------------------------------------------------------------------------------')
 
 ################################################### Algo_3##########################################################
