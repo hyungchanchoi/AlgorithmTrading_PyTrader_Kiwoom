@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -20,7 +19,6 @@ class Algos(QMainWindow, form_class):
         self.setupUi(self)
         self.trade_stocks_done = False                
         self.kiwoom = Kiwoom()
-        self.kiwoom.comm_connect()
         
         self.account = 5624118510
 
@@ -28,6 +26,7 @@ class Algos(QMainWindow, form_class):
         self.spread = []
 
         self.one_codes = '069500;364690;365040'
+        self.kiwoom.subscribe_stock_conclusion('2000', self.one_codes)
 
 #       self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    00:지정가, 03 :시장가
     def buy_kodex(self,price,leverage):

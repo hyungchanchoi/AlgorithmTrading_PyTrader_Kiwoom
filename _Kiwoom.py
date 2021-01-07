@@ -2,7 +2,6 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
-from _algos import *
 import time
 import pandas as pd
 import sqlite3
@@ -11,6 +10,7 @@ TR_REQ_TIME_INTERVAL = 0.2
 
 
 class Kiwoom(QAxWidget):
+
     def __init__(self):
         super().__init__()
 
@@ -41,7 +41,7 @@ class Kiwoom(QAxWidget):
 
 #### 실시간 등록 #########################################################
         # self.subscribe_market_time('1')
-        self.subscribe_stock_conclusion('2000', Algos.one_codes)
+        # self.subscribe_stock_conclusion('2000', Algos.one_codes)
 ##########################################################################
 
 
@@ -136,7 +136,7 @@ class Kiwoom(QAxWidget):
         return ret_
         self.login_event_loop.exec()
 
-    def _receive_chejan_data(self, gubun, item_cnt, fid_list):
+    def _handler_chejan_data(self, gubun, item_cnt, fid_list):
         print('[', self.get_chejan_data(908), ']', self.get_chejan_data(302), ':', self.get_chejan_data(905),
               self.get_chejan_data(900), '주', self.get_chejan_data(10), '원')
         self.login_event_loop.exit()
