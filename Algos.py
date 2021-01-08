@@ -19,18 +19,40 @@ class Algos(QMainWindow, form_class):
         self.setupUi(self)
         self.trade_stocks_done = False                
         self.kiwoom = Kiwoom()
-        
+
+########계좌번호######## 
         self.account = 5624118510
+#############################################################
 
-        self.kodex_cumret = [] ; self.tiger_cumret = [] 
-        self.spread = []
 
-        self.one_codes = '069500;364690;365040'
-        self.kiwoom.subscribe_stock_conclusion('2000', self.one_codes)
+########변수########
+        self.kodex_bid_price = [] ; self.tiger_bid_price = [] 
+        self.spread = [] ; self.spread_inv = []
+#############################################################
+        
 
-#       self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    00:지정가, 03 :시장가
+########종목코드 실시간 등록########
+        self.codes = '069500;102110;114800'
+        self.kiwoom.subscribe_stock_conclusion('2000', self.codes)
+##############################################################
+
+
+############종목수량, 매수/매도호가 ##########################
+    def get_data(self):
+        self.kiwoom.get_amount()
+        amount = self.kiwoom.amount 
+        bid_price = self.kiwoom.bid_price
+        ask_price = self.kiwoom.ask_price
+        return amount , bid_price, ask_price
+###############################################################################################
+
+
+
+########매수/매도 메소드###########################################################################################
+ # self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    00:지정가, 03 :시장가
+
     def buy_kodex(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 364690, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 364690, leverage, price, '03', "")   
         
     def sell_kodex(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 364690, leverage, price, '03', "")
@@ -41,21 +63,206 @@ class Algos(QMainWindow, form_class):
     def sell_tiger(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 365040, leverage, price, '03', "")
         
-    def buy_kospi(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '069500', leverage, price, '00', "")
+    def buy_kodex200(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '069500', leverage, price, '03', "")
         
-    def sell_kospi(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '069500', leverage, price, '00', "")
+    def sell_kodex200(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '069500', leverage, price, '03', "")
+
+    def buy_tiger200(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '102110', leverage, price, '03', "")
         
-    def buy_inverse(self,price,leverage):
+    def sell_tiger200(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '102110', leverage, price, '03', "")
+        
+    def buy_kodex_inv(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 114800, leverage, price, '03', "")
         
-    def sell_inverse(self,price,leverage):
+    def sell_kodex_inv(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 114800, leverage, price, '03', "")
 
+###################################################################################################################
 
+
+
+### trading algorithms ###
 ################################################### Algo_1##########################################################
-    def one(self):
+    def one(self,amount,bid_price,ask_price):
+        print('[algo_one]-----------------------------------------------------------------------------')
+        
+        ###초기 설정###
+        leverage = 1       
+        init_count = 30
+        kodex200 = 'KODEX 200'
+        tiger200 = 'TIGER 200'     
+        
+
+        ######스프레드 계산######
+        if len(bid_price)!=3:
+            pass
+        else:    
+            self.spread.append(bid_price['069500']-bid_price['102110'])  
+            if len(self.spread) <= 60:
+                print(len(self.spread),'/60')
+
+
+        ######이동평균 계산 후 트레이딩 시작######
+        if len(self.spread)>=60:
+ 
+            spread = pd.Series(self.spread)
+
+            threshold = spread.rolling(window=60,center=False).mean()
+
+            print('spread :',round(spread.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]+30),4))
+
+            if spread.iloc[-1] > (threshold.iloc[-1]+30) and amount[kodex200] >=1:
+                print('short position')
+                self.sell_kodex200(0,leverage)
+                self.buy_tiger200(0,leverage)
+
+            elif spread.iloc[-1] < - (threshold.iloc[-1]+30) and amount[tiger200]>=1 :
+                print('long position')
+                self.buy_kodex200(0,leverage)
+                self.sell_tiger200(0,leverage)
+
+            elif abs(spread.iloc[-1]) < threshold.iloc[-1] :
+                print('close position')                    
+                if amount[kodex200] < init_count :
+                    self.buy_kodex200(0,init_count-amount[kodex200])
+                    self.sell_tiger200(0,init_count-amount[kodex200])
+                elif amount[kodex200] > init_count :
+                    self.sell_kodex200(0,amount[kodex200]-init_count)
+                    self.buy_tiger200(0,amount[kodex200]-init_count)
+
+
+################################################### Algo_2##########################################################
+    def two(self,amount,bid_price,ask_price):
+        print('[algo_two]-----------------------------------------------------------------------------')   
+        ###초기 설정###
+        leverage = 1
+        
+        init_count = 30
+
+        kodex200 = 'KODEX 200'
+        kodex_inv = 'KODEX 인버스'      
+        
+
+        ###스프레드 계산###
+        if len(bid_price)!=3:
+            pass
+        else:    
+            self.spread_inv.append(bid_price['069500']-bid_price['114800']) 
+            
+            if len(self.spread_inv) <= 60:
+                print(len(self.spread_inv),'/60')
+
+
+        ###이동평균 계산 후 트레이딩 시작###
+        if len(self.spread_inv)>=60:
+ 
+            spread_inv = pd.Series(self.spread_inv)
+
+            threshold = spread_inv.rolling(window=60,center=False).mean()
+
+            print('spread_inv :',round(spread_inv.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]+10),4))
+
+            if spread_inv.iloc[-1] > (threshold.iloc[-1]+10) and amount[kodex200] >=1:
+                print('short position')
+                self.sell_kodex200(0,leverage)
+                self.buy_inverse(0,leverage)
+
+            elif spread_inv.iloc[-1] < - (threshold.iloc[-1]+10) and amount[kodex_inv]>=1 :
+                print('long position')
+                self.buy_kodex200(0,leverage)
+                self.sell_inverse(0,leverage)
+
+            elif abs(spread_inv.iloc[-1]) < threshold.iloc[-1] :
+                print('close position')                    
+                if amount[kodex200] < init_count :
+                    self.buy_kodex200(0,init_count-amount[kodex200])
+                    self.sell_inverse(0,init_count-amount[kodex200])
+                elif amount[kodex200] > init_count :
+                    self.sell_kodex200(0,amount[kodex200]-init_count)
+                    self.buy_inverse(0,amount[kodex200]-init_count)
+        else:
+            pass
+
+
+        print('------------------------------------------------------------------------------')
+
+
+################################################### Algo_3##########################################################
+    def three(self):
+    
+        leverage = 1
+        
+        kospi = 'KODEX 200'
+        kodex = 'KODEX 혁신기술테마액티브'
+        tiger = 'TIGER AI코리아그로스액티브'       
+        
+        self.kiwoom.get_amount()
+        amount = self.kiwoom.amount
+
+        profit = self.kiwoom.profit
+                    
+        bid_price = self.kiwoom.bid_price
+        ask_price = self.kiwoom.ask_price
+        print(ask_price)
+        print(bid_price)
+        
+        if len(price)!=3:
+            pass
+        else:
+            self.kodex_ask_price.append(ask_price['364690']) ; self.tiger_ask_price.append(ask_price['365040'])
+            self.kodex_bid_price.append(bid_price['364690']) ; self.tiger_bid_price.append(bid_price['365040'])
+      
+            self.short_spread.append()
+ 
+            kodex_profit = profit[kodex]          ; tiger_profit = profit[tiger]
+
+            
+            if len(self.kodex_ask_price) <= 60:
+                print(len(self.kodex_ask_price),'/60')
+
+
+        if len(self.kodex_ask_price)>=60:
+ 
+            spread = pd.Series(self.spread)
+
+            threshold = spread.rolling(window=60,center=False).mean()
+
+            print('spread :',round(spread.iloc[-1],4), 'threshold :',round(threshold.iloc[-1],4))
+
+            if spread.iloc[-1] > threshold.iloc[-1] and amount[kodex] >=1:
+                print('short position')
+                self.sell_kodex(0,leverage)
+                self.buy_tiger(0,leverage)
+
+            elif spread.iloc[-1] < - threshold.iloc[-1] and amount[tiger]>=1 :
+                print('long position')
+                self.buy_kodex(0,leverage)
+                self.sell_tiger(0,leverage)
+
+            elif abs(spread.iloc[-1]) < threshold.iloc[-1] :
+                print('close position')                    
+                if amount[kodex] < init_count and profit[kodex] > kodex_ask_price and profit[tiger] > tiger_bid_price:
+                    self.buy_kodex(0,init_count-amount[kodex])
+                    self.sell_tiger(0,init_count-amount[kodex])
+                elif amount[kodex] > init_count and profit[kodex] > kodex_bid_price and profit[tiger] > tiger_ask_price:
+                    self.sell_kodex(0,amount[kodex]-init_count)
+                    self.buy_tiger(0,amount[kodex]-init_count)
+        else:
+            pass
+
+        self.kiwoom.get_amount()
+        amount = self.kiwoom.amount
+
+
+        print('------------------------------------------------------------------------------')
+
+
+################################################### Algo_4##########################################################
+    def four(self):
     
         leverage = 1
 
@@ -87,7 +294,7 @@ class Algos(QMainWindow, form_class):
             kodex_mid_price = (kodex_bid_price+kodex_ask_price)/2
             tiger_mid_price = (tiger_bid_price+tiger_ask_price)/2
             
-            self.spread.append(kodex_mid_price - tiger_mid_price ) 
+            self.spread.append( kodex_mid_price - tiger_mid_price ) 
             
             if len(self.spread) <= 60:
                 print(len(self.spread),'/60')
@@ -126,178 +333,4 @@ class Algos(QMainWindow, form_class):
         amount = self.kiwoom.amount
 
 
-        print('------------------------------------------------------------------------------')
-
-
-################################################### Algo_2##########################################################
-    def two(self):
-    
-        leverage = 1
-
-        count_kodex = 30  #초기 종목 개수
-        count_tiger = 30
-        count_kospi = 180
-        
-
-        kospi = 'KODEX 인버스                '
-        kodex = 'KODEX 혁신기술테마액티브                '
-        tiger = 'TIGER AI코리아그로스액티브                '        
-        codes = ['114800','364690','365040'] ; self.kiwoom.codes = codes
-
-        amount = self.kiwoom.amount
-
-        
-        price = self.kiwoom.price
-        ret = self.kiwoom.rate
-        print(price)
-        print(ret)
-        
-        if len(price)!=3:
-            pass
-        else:
-            kospi_price=price['114800'] ; kodex_price=price['364690'] ; tiger_price=price['365040']
-            kospi_ret=(kospi_price-5485)/5485 ; kodex_ret=(kodex_price-10005)/10005 ; tiger_ret=(tiger_price-10085)/10085
-
-            self.kodex_kospi.append(kodex_ret - kospi_ret)
-            self.tiger_kospi.append(tiger_ret - kospi_ret)
-
-            if len(self.kodex_kospi) <=100:
-                print(len(self.kodex_kospi),'/100') 
-        
-        if len(self.kodex_kospi)>100:
-
-            kodex_kospi = pd.Series(self.kodex_kospi)
-            threshold_kodex = kodex_kospi.rolling(window=100,center=False).mean()
-            print('kodex :',round(kodex_kospi.iloc[-1],4) , round(threshold_kodex.iloc[-1],4))
-
-            if kodex_kospi.iloc[-1] > threshold_kodex.iloc[-1]:
-                self.sell_kodex(kodex_price,leverage)
-                self.buy_inverse(kospi_price,3*leverage)
-            elif kodex_kospi.iloc[-1] < - threshold_kodex.iloc[-1]:
-                self.buy_kodex(kodex_price,leverage)
-                self.sell_inverse(kospi_price,3*leverage)
-            elif abs(kodex_kospi.iloc[-1]) < threshold_kodex.iloc[-1]-0.0003 :
-                try :
-                    if amount[kodex] < count_kodex:
-                        self.buy_kodex(kodex_price,count_kodex-amount[kodex])
-                        self.sell_inverse(kospi_price,3*(count_kodex-amount[kodex]))
-                    elif amount[kodex] > count_kodex:
-                        self.sell_kodex(kodex_price,amount[kodex]-count_kodex)
-                        self.buy_inverse(kospi_price,3*(amount[kodex]-count_kodex))
-                except:
-                    pass
-            else:
-                pass
-        else:
-            pass
-        
-        if len(self.tiger_kospi)>=100:
-
-            tiger_kospi = pd.Series(self.tiger_kospi)           
-            threshold_tiger = tiger_kospi.rolling(window=100,center=False).mean()
-            print('tiger :',round(tiger_kospi.iloc[-1],4) , round(threshold_tiger.iloc[-1],4))
-            
-            if tiger_kospi.iloc[-1] > threshold_tiger.iloc[-1]:
-                self.sell_tiger(tiger_price,leverage)
-                self.buy_inverse(kospi_price,3*leverage)
-            elif tiger_kospi.iloc[-1] < - threshold_tiger.iloc[-1]:    
-                self.buy_tiger(tiger_price,leverage)
-                self.sell_inverse(kospi_price,3*leverage)
-            elif abs(tiger_kospi.iloc[-1]) < threshold_tiger.iloc[-1]-0.0003:
-                try:
-                    if amount[tiger] < count_tiger:
-                        self.buy_tiger(tiger_price,count_tiger-amount[tiger])
-                        self.sell_inverse(kospi_price,3*(count_tiger-amount[tiger]))
-                    elif amount[tiger] > count_tiger:
-                        self.sell_tiger(tiger_price,amount[tiger]-count_tiger)
-                        self.buy_inverse(kospi_price,3*(amount[tiger]-count_tiger))
-                except:
-                    pass
-            else:
-                pass
-
-        print('------------------------------------------------------------------------------')
-
-################################################### Algo_3##########################################################
-def three(self):
-    
-        leverage = 1
-
-        count_kodex = 30  #초기 종목 개수
-        count_tiger = 30
-        count_kospi = 60
-
-        kospi = 'KODEX 200'
-        kodex = 'KODEX 혁신기술테마액티브'
-        tiger = 'TIGER AI코리아그로스액티브'        
-        codes = ['069500','364690','365040'] ; self.kiwoom.codes = codes
-
-        amount = self.kiwoom.amount
-        print(amount)        
-        for code in codes:
-            self.kiwoom.get_real_data(code)
-        
-        price = self.kiwoom.price
-        ret = self.kiwoom.rate
-        print(price)
-        print(ret)
-        
-        if len(price)!=3:
-            pass
-        else:
-            kospi_price=price['069500']; kodex_price=price['364690'] ; tiger_price=price['365040']
-            kospi_ret=ret['069500']   ; kodex_ret=ret['364690']   ; tiger_ret=ret['365040']
-
-            self.kodex_kospi.append(kodex_ret - kospi_ret)
-            self.tiger_kospi.append(tiger_ret - kospi_ret)
-
-        if len(self.kodex_kospi)>=60:
-            
-            kodex_kospi = pd.Series(self.kodex_kospi)
-            threshold_kodex = kodex_kospi.rolling(window=100,center=False).mean()
-            
-            if kodex_kospi.iloc[-1] > threshold_kodex.iloc[-1]:
-                print(round(kodex_kospi.iloc[-1],4))
-                self.sell_kodex(kodex_price,leverage)
-                self.buy_kospi(kospi_price,leverage)
-            elif kodex_kospi.iloc[-1] < - threshold_kodex.iloc[-1]:
-                print(round(kodex_kospi.iloc[-1],4))
-                self.buy_kodex(kodex_price,leverage)
-                self.sell_kospi(kospi_price,leverage)
-            elif abs(kodex_kospi.iloc[-1]) < threshold_kodex.iloc[-1]:
-                print(round(kodex_kospi.iloc[-1],4))
-                if amount[kodex] < count_kodex:
-                    self.buy_kodex(kodex_price,leverage)
-                    self.sell_kospi(kospi_price,count_kodex-amount[kodex])
-                elif amount[kodex] > count_kodex:
-                    self.sell_kodex(kodex_price,leverage)
-                    self.buy_inverse(kospi_price,amount[kodex]-count_kodex)
-            else:
-                pass
-        else:
-            pass
-        
-        if len(tiger_ret)>=60:
-            
-            tiger_kospi = pd.Series(tiger_kospi)           
-            threshold_tiger = tiger_kospi.rolling(window=100,center=False).mean()
-            
-            if tiger_kospi.iloc[-1] > threshold_tiger.iloc[-1]:
-                print(round(tiger_kospi.iloc[-1],4))
-                self.sell_tiger(tiger_price,leverage)
-                self.buy_kospi(kospi_price,leverage)
-            elif tiger_kospi.iloc[-1] < - threshold_tiger.iloc[-1]:
-                print(round(tiger_kospi.iloc[-1],4))
-                self.buy_tiger(tiger_price,leverage)
-                self.sell_kospi(kospi_price,leverage)
-            elif abs(tiger_kospi.iloc[-1]) < threshold_tiger.iloc[-1]:
-                print(round(tiger_kospi.iloc[-1],4))
-                if amount[tiger] < count_tiger:
-                    self.buy_tiger(tiger_price,leverage)
-                    self.sell_kospi(kospi_price,count_tiger-amount[tiger])
-                elif amount[tiger] > count_tiger:
-                    self.sell_tiger(tiger_price,leverage)
-                    self.buy_kospi(kospi_price,amount[tiger]-count_tiger)
-            else:
-                pass
         print('------------------------------------------------------------------------------')

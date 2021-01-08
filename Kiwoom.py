@@ -115,6 +115,7 @@ class Kiwoom(QAxWidget):
 ##########################################################################
 
 
+
 #### 실시간 ###############################################################
 
     def subscribe_stock_conclusion(self, screen_no, codes):
@@ -126,19 +127,22 @@ class Kiwoom(QAxWidget):
                 "GetCommRealData(QString,int)", code, 27)  # 매도호가
             temp_bid_price = self.ocx.dynamicCall(
                 "GetCommRealData(QString,int)", code, 28)  # 매수호가
-            temp_price = self.ocx.dynamicCall(
-                "GetCommRealData(QString,int)", code, 10)
-            temp_rate = self.ocx.dynamicCall(
-                "GetCommRealData(QString,int)", code, 12)
-            self.price[code] = int(temp_price)
-            self.rate[code] = float(temp_rate)
+            # temp_price = self.ocx.dynamicCall(
+            #     "GetCommRealData(QString,int)", code, 10)
+            # temp_rate = self.ocx.dynamicCall(
+            #     "GetCommRealData(QString,int)", code, 12)
+            # self.price[code] = int(temp_price)
+            # self.rate[code] = float(temp_rate)
             self.bid_price[code] = int(temp_bid_price)
             self.ask_price[code] = int(temp_ask_price)
 
     def _handler_chejan_data(self, gubun, item_cnt, fid_list):
         print('[', self.GetChejanData(908), ']', self.GetChejanData(302), ':', self.GetChejanData(905),
-              self.GetChejanData(900), '주', self.GetChejanData(10), '원')
+                   self.GetChejanData(900), '주', self.GetChejanData(10), '원')
         self.login_event_loop.exit()
+##########################################################################    
+
+
 
 #### 메소드 ###############################################################
 
