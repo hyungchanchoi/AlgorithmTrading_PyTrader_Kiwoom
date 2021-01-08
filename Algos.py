@@ -90,10 +90,19 @@ class Algos(QMainWindow, form_class):
     def one(self,amount,bid_price,ask_price):
         print('[algo_one]-----------------------------------------------------------------------------')
         
+        ### 알고리즘 요약
+        # 1. kodex200과 tiger200의 매도가격 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
+
+
         ###초기 설정###
         leverage = 1       
         init_count = 30
-        kodex200 = 'KODEX 200'
+        bid_ask_spread = 10
+
+        kodex200 = 'KODEX 200'   
         tiger200 = 'TIGER 200'     
         
 
@@ -113,19 +122,19 @@ class Algos(QMainWindow, form_class):
 
             threshold = spread.rolling(window=60,center=False).mean()
 
-            print('spread :',round(spread.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]+30),4))
+            print('spread :',round(spread.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]+bid_ask_spread),4))
 
-            if spread.iloc[-1] > (threshold.iloc[-1]+30) and amount[kodex200] >=1:
+            if spread.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[kodex200] >=1:
                 print('short position')
                 self.sell_kodex200(0,leverage)
                 self.buy_tiger200(0,leverage)
 
-            elif spread.iloc[-1] < - (threshold.iloc[-1]+30) and amount[tiger200]>=1 :
+            elif spread.iloc[-1] < - (threshold.iloc[-1]+bid_ask_spread) and amount[tiger200]>=1 :
                 print('long position')
                 self.buy_kodex200(0,leverage)
                 self.sell_tiger200(0,leverage)
 
-            elif abs(spread.iloc[-1]) < threshold.iloc[-1] :
+            elif abs(spread.iloc[-1]) <= threshold.iloc[-1] :
                 print('close position')                    
                 if amount[kodex200] < init_count :
                     self.buy_kodex200(0,init_count-amount[kodex200])
@@ -138,6 +147,13 @@ class Algos(QMainWindow, form_class):
 ################################################### Algo_2##########################################################
     def two(self,amount,bid_price,ask_price):
         print('[algo_two]-----------------------------------------------------------------------------')   
+        
+        ### 알고리즘 요약
+        # 1. kodex200과 kodex_inv의 매도가격 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
+        
         ###초기 설정###
         leverage = 1
         
@@ -145,7 +161,7 @@ class Algos(QMainWindow, form_class):
 
         kodex200 = 'KODEX 200'
         kodex_inv = 'KODEX 인버스'      
-        
+        bid_ask_spread = 10
 
         ###스프레드 계산###
         if len(bid_price)!=3:
