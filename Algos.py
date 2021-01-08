@@ -4,7 +4,7 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5 import uic
-from _kiwoom import *
+from Kiwoom import *
 import time
 from datetime import datetime,timedelta
 now = datetime.now()
@@ -30,28 +30,28 @@ class Algos(QMainWindow, form_class):
 
 #       self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    00:지정가, 03 :시장가
     def buy_kodex(self,price,leverage):
-        self.kiwoom.send_order("send_order_req", "0101", self.account, 1, 364690, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 364690, leverage, price, '03', "")
         
     def sell_kodex(self,price,leverage):
-        self.kiwoom.send_order("send_order_req", "0101", self.account, 2, 364690, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 364690, leverage, price, '03', "")
         
     def buy_tiger(self,price,leverage):
-        self.kiwoom.send_order("send_order_req", "0101", self.account, 1, 365040, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 365040, leverage, price, '03', "")
         
     def sell_tiger(self,price,leverage):
-        self.kiwoom.send_order("send_order_req", "0101", self.account, 2, 365040, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 365040, leverage, price, '03', "")
         
     def buy_kospi(self,price,leverage):
-        self.kiwoom.send_order("send_order_req", "0101", self.account, 1, '069500', leverage, price, '00', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '069500', leverage, price, '00', "")
         
     def sell_kospi(self,price,leverage):
-        self.kiwoom.send_order("send_order_req", "0101", self.account, 2, '069500', leverage, price, '00', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '069500', leverage, price, '00', "")
         
     def buy_inverse(self,price,leverage):
-        self.kiwoom.send_order("send_order_req", "0101", self.account, 1, 114800, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 114800, leverage, price, '03', "")
         
     def sell_inverse(self,price,leverage):
-        self.kiwoom.send_order("send_order_req", "0101", self.account, 2, 114800, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 114800, leverage, price, '03', "")
 
 
 ################################################### Algo_1##########################################################
@@ -59,27 +59,16 @@ class Algos(QMainWindow, form_class):
     
         leverage = 1
 
-        count_tiger = 40  #초기 종목 개수
-        count_kodex = 40
-
+        init_count = 60  #초기 종목 개수
+        
         kospi = 'KODEX 200'
         kodex = 'KODEX 혁신기술테마액티브'
         tiger = 'TIGER AI코리아그로스액티브'       
         
-        # if self.amount_ == False:
-        #     self.kiwoom.amount[kodex] = 40
-        #     self.kiwoom.amount[tiger] = 40 
-        #     amount = self.kiwoom.amount      
-        #     amount_kodex = int(amount[kodex])
-        #     amount_tiger = int(amount[tiger])        
-        # elif self.amount_ == True:
-        #     amount = self.kiwoom.amount
-        #     amount_kodex = int(amount[kodex])
-        #     amount_tiger = int(amount[tiger])
-        
         self.kiwoom.get_amount()
         amount = self.kiwoom.amount
-        print(amount)
+
+        profit = self.kiwoom.profit
                     
         price = self.kiwoom.price
         ret = self.kiwoom.rate
@@ -91,8 +80,9 @@ class Algos(QMainWindow, form_class):
         if len(price)!=3:
             pass
         else:
-            kodex_bid_price=int(bid_price['364690']) ; tiger_bid_price=int(bid_price['365040']  )
-            kodex_ask_price=int(ask_price['364690']) ; tiger_ask_price=int(ask_price['365040']  )       
+            kodex_bid_price = bid_price['364690'] ; tiger_bid_price = bid_price['365040'] 
+            kodex_ask_price = ask_price['364690'] ; tiger_ask_price = ask_price['365040']       
+            kodex_profit = profit[kodex]          ; tiger_profit = profit[tiger]
 
             kodex_mid_price = (kodex_bid_price+kodex_ask_price)/2
             tiger_mid_price = (tiger_bid_price+tiger_ask_price)/2
@@ -123,14 +113,17 @@ class Algos(QMainWindow, form_class):
 
             elif abs(spread.iloc[-1]) < threshold.iloc[-1] :
                 print('close position')                    
-                if amount[kodex] < count_kodex :
-                    self.buy_kodex(0,count_kodex-amount[kodex])
-                    self.sell_tiger(0,count_kodex-amount[kodex])
-                elif amount[kodex] > count_kodex :
-                    self.sell_kodex(0,amount[kodex]-count_kodex)
-                    self.buy_tiger(0,amount[kodex]-count_kodex)
+                if amount[kodex] < init_count and profit[kodex] > kodex_ask_price and profit[tiger] > tiger_bid_price:
+                    self.buy_kodex(0,init_count-amount[kodex])
+                    self.sell_tiger(0,init_count-amount[kodex])
+                elif amount[kodex] > init_count and profit[kodex] > kodex_bid_price and profit[tiger] > tiger_ask_price:
+                    self.sell_kodex(0,amount[kodex]-init_count)
+                    self.buy_tiger(0,amount[kodex]-init_count)
         else:
             pass
+
+        self.kiwoom.get_amount()
+        amount = self.kiwoom.amount
 
 
         print('------------------------------------------------------------------------------')
@@ -152,10 +145,7 @@ class Algos(QMainWindow, form_class):
         codes = ['114800','364690','365040'] ; self.kiwoom.codes = codes
 
         amount = self.kiwoom.amount
-        print(amount)   
 
-        for code in codes:
-            self.kiwoom.get_real_data(code)
         
         price = self.kiwoom.price
         ret = self.kiwoom.rate

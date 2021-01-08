@@ -27,6 +27,7 @@ class Kiwoom(QAxWidget):
         self.price = {}
         self.rate = {}
         self.amount = {}
+        self.profit = {}
         self.bid_price = {}  # 매수호가
         self.ask_price = {}  # 매도호가
 ##########################################################################
@@ -69,7 +70,7 @@ class Kiwoom(QAxWidget):
 
     def get_amount(self):
         # TR 요청
-        self.request_opw00001()
+        # self.request_opw00001()
         self.request_opw00004()
 
     def request_opw00001(self):
@@ -103,9 +104,13 @@ class Kiwoom(QAxWidget):
             rows = self.GetRepeatCnt(trcode, rqname)
             for i in range(rows):
                 code = self.GetCommData(trcode, rqname, i, "종목명")
-                amount_ = self.GetCommData(trcode, rqname, i, "보유수량")
-                self.amount[code] = int(amount_)
-            self.login_event_loop.exit()
+                amount = self.GetCommData(trcode, rqname, i, "보유수량")
+                buy = self.GetCommData(trcode, rqname, i, "평균단가")
+                self.amount[code] = int(amount)
+                self.profit[code] = int(buy)                            
+            print(self.amount)
+        self.login_event_loop.exit()
+            
 
 ##########################################################################
 
@@ -130,15 +135,9 @@ class Kiwoom(QAxWidget):
             self.bid_price[code] = int(temp_bid_price)
             self.ask_price[code] = int(temp_ask_price)
 
-    def get_chejan_data(self, fid):
-        ret = self.ocx.dynamicCall("GetChejanData(int)", fid)
-        ret_ = ret.rstrip()
-        return ret_
-        self.login_event_loop.exec()
-
     def _handler_chejan_data(self, gubun, item_cnt, fid_list):
-        print('[', self.get_chejan_data(908), ']', self.get_chejan_data(302), ':', self.get_chejan_data(905),
-              self.get_chejan_data(900), '주', self.get_chejan_data(10), '원')
+        print('[', self.GetChejanData(908), ']', self.GetChejanData(302), ':', self.GetChejanData(905),
+              self.GetChejanData(900), '주', self.GetChejanData(10), '원')
         self.login_event_loop.exit()
 
 #### 메소드 ###############################################################
@@ -169,9 +168,11 @@ class Kiwoom(QAxWidget):
     def SendOrder(self, rqname, screen, accno, order_type, code, quantity, price, hoga, order_no):
         self.ocx.dynamicCall("SendOrder(QString, QString, QString, int, QString, int, int, QString, QString)",
                              [rqname, screen, accno, order_type, code, quantity, price, hoga, order_no])
+        self.login_event_loop.exec()
 
     def GetChejanData(self, fid):
         data = self.ocx.dynamicCall("GetChejanData(int)", fid)
+        data = data.rstrip()
         return data
 
 ##########################################################################
