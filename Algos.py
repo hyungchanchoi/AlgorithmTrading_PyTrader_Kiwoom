@@ -88,65 +88,7 @@ class Algos(QMainWindow, form_class):
 ### trading algorithms ###
 ################################################### Algo_1##########################################################
     def one(self,amount,bid_price,ask_price):
-        print('[algo_one]-----------------------------------------------------------------------------')
-        
-        ### 알고리즘 요약
-        # 1. kodex200과 tiger200의 매도가격 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
-        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
-        # 3. 숏 또는 롱 포지션 취한 후, 
-        # 4. 반대 포지션으로 청산
-
-
-        ###초기 설정###
-        leverage = 1       
-        init_count = 30
-        bid_ask_spread = 10
-
-        kodex200 = 'KODEX 200'   
-        tiger200 = 'TIGER 200'     
-        
-
-        ######스프레드 계산######
-        if len(bid_price)!=3:
-            pass
-        else:    
-            self.spread.append(bid_price['069500']-bid_price['102110'])  
-            if len(self.spread) <= 60:
-                print(len(self.spread),'/60')
-
-
-        ######이동평균 계산 후 트레이딩 시작######
-        if len(self.spread)>=60:
- 
-            spread = pd.Series(self.spread)
-
-            threshold = spread.rolling(window=60,center=False).mean()
-
-            print('spread :',round(spread.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]+bid_ask_spread),4))
-
-            if spread.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[kodex200] >=1:
-                print('short position')
-                self.sell_kodex200(0,leverage)
-                self.buy_tiger200(0,leverage)
-
-            elif spread.iloc[-1] < - (threshold.iloc[-1]+bid_ask_spread) and amount[tiger200]>=1 :
-                print('long position')
-                self.buy_kodex200(0,leverage)
-                self.sell_tiger200(0,leverage)
-
-            elif abs(spread.iloc[-1]) <= threshold.iloc[-1] :
-                print('close position')                    
-                if amount[kodex200] < init_count :
-                    self.buy_kodex200(0,init_count-amount[kodex200])
-                    self.sell_tiger200(0,init_count-amount[kodex200])
-                elif amount[kodex200] > init_count :
-                    self.sell_kodex200(0,amount[kodex200]-init_count)
-                    self.buy_tiger200(0,amount[kodex200]-init_count)
-
-
-################################################### Algo_2##########################################################
-    def two(self,amount,bid_price,ask_price):
-        print('[algo_two]-----------------------------------------------------------------------------')   
+        print('[algo_one]-----------------------------------------------------------------------------')   
         
         ### 알고리즘 요약
         # 1. kodex200과 kodex_inv의 매도가격 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
@@ -207,40 +149,93 @@ class Algos(QMainWindow, form_class):
         print('------------------------------------------------------------------------------')
 
 
+################################################### Algo_2##########################################################
+    def two(self,amount,bid_price,ask_price):
+        print('[algo_two]-----------------------------------------------------------------------------')
+        
+        ### 알고리즘 요약
+        # 1. kodex200과 tiger200의 매도가격 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
+
+
+        ###초기 설정###
+        leverage = 1       
+        init_count = 30
+        bid_ask_spread = 15
+
+        kodex200 = 'KODEX 200'   
+        tiger200 = 'TIGER 200'     
+        
+
+        ######스프레드 계산######
+        if len(bid_price)!=3:
+            pass
+        else:    
+            self.spread.append(bid_price['069500']-bid_price['102110'])  
+            if len(self.spread) <= 60:
+                print(len(self.spread),'/60')
+
+
+        ######이동평균 계산 후 트레이딩 시작######
+        if len(self.spread)>=60:
+ 
+            spread = pd.Series(self.spread)
+
+            threshold = spread.rolling(window=60,center=False).mean()
+
+            print('spread :',round(spread.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]+bid_ask_spread),4))
+
+            if spread.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[kodex200] >=1:
+                print('short position')
+                self.sell_kodex200(0,leverage)
+                self.buy_tiger200(0,leverage)
+
+            elif spread.iloc[-1] < - (threshold.iloc[-1]+bid_ask_spread) and amount[tiger200]>=1 :
+                print('long position')
+                self.buy_kodex200(0,leverage)
+                self.sell_tiger200(0,leverage)
+
+            elif abs(spread.iloc[-1]) <= threshold.iloc[-1] :
+                print('close position')                    
+                if amount[kodex200] < init_count :
+                    self.buy_kodex200(0,init_count-amount[kodex200])
+                    self.sell_tiger200(0,init_count-amount[kodex200])
+                elif amount[kodex200] > init_count :
+                    self.sell_kodex200(0,amount[kodex200]-init_count)
+                    self.buy_tiger200(0,amount[kodex200]-init_count)
+
+
 ################################################### Algo_3##########################################################
     def three(self):
     
-        leverage = 1
-        
-        kospi = 'KODEX 200'
-        kodex = 'KODEX 혁신기술테마액티브'
-        tiger = 'TIGER AI코리아그로스액티브'       
-        
-        self.kiwoom.get_amount()
-        amount = self.kiwoom.amount
 
-        profit = self.kiwoom.profit
-                    
-        bid_price = self.kiwoom.bid_price
-        ask_price = self.kiwoom.ask_price
-        print(ask_price)
-        print(bid_price)
+        ### 알고리즘 요약
+        # 1. kodex200과 tiger200의 매도가격 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
+    
         
-        if len(price)!=3:
+        ###초기 설정###
+        leverage = 1       
+        init_count = 30
+        bid_ask_spread = 15
+        kodex = 'KODEX 혁신기술테마액티브'
+        tiger = 'TIGER AI코리아그로스액티브'   
+        
+        
+        ######스프레드 계산######
+        if len(bid_price)!=3:
             pass
-        else:
-            self.kodex_ask_price.append(ask_price['364690']) ; self.tiger_ask_price.append(ask_price['365040'])
-            self.kodex_bid_price.append(bid_price['364690']) ; self.tiger_bid_price.append(bid_price['365040'])
-      
-            self.short_spread.append()
- 
-            kodex_profit = profit[kodex]          ; tiger_profit = profit[tiger]
+        else:    
+            self.spread.append(bid_price['069500']-bid_price['102110'])  
+            if len(self.spread) <= 60:
+                print(len(self.spread),'/60')
 
             
-            if len(self.kodex_ask_price) <= 60:
-                print(len(self.kodex_ask_price),'/60')
-
-
+        ######이동평균 계산 후 트레이딩 시작######
         if len(self.kodex_ask_price)>=60:
  
             spread = pd.Series(self.spread)
