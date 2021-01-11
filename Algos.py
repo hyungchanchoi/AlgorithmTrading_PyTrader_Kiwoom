@@ -281,6 +281,7 @@ class Algos(QMainWindow, form_class):
                     self.sell_kodex_inv(0,leverage*hedge_ratio)
                     self.buy_tiger_inv(0,leverage)                  
             self.time_count += 1
+
             print('time to trade : ',  time_term - (self.time_count)%time_term)
 
  
@@ -291,13 +292,9 @@ class Algos(QMainWindow, form_class):
                     self.buy_tiger_inv(0,init_count-amount[kodex_inv])
                 elif amount[kodex_inv] > init_count :
                     self.sell_tiger_inv(0,amount[kodex_inv]-init_count)
-                    self.buy_kodex_inv(0,(amount[kodex_inv]-init_count)*hedge_ratio)
-                        
+                    self.buy_kodex_inv(0,(amount[kodex_inv]-init_count)*hedge_ratio)                       
         else:
             pass
-
-
-        print('------------------------------------------------------------------------------')
 
 
 ################################################### Algo_4##########################################################

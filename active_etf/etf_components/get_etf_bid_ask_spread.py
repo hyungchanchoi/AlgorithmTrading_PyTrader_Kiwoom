@@ -25,13 +25,16 @@ for code in codes['code']:
     soup = BeautifulSoup(html, 'html.parser')
     try:
         bid = soup.select('.downBox > .num')[-1].text  ; bid = int(bid.replace(',',''))
-        ask = soup.select('.upBox > .num')[0].text     ; ask = int(ask.replace(',',''))
+        ask = soup.select('.upBox > .num')[0].text     ; ask = int(ask.replace(',',''))       
+        if bid - ask == 5:
+            five_spread.append(code)
+            print(code_to_name[code])
+        if bid - ask == 10:
+            ten_spread.append(code)
+            # print(code_to_name[code])
     except:
         pass
-    # print(code_to_name[code],bid,ask)
-    if bid - ask == 5:
-        five_spread.append(code)
-        print(code_to_name[code])
-    if bid - ask == 10:
-        ten_spread.append(code)
-        # print(code_to_name[code])
+
+
+five_spread = pd.DataFrame(five_spread)
+five_spread.to_excel('C:/Users/chhch/algorithmtrading/PyTrader_KIWOOM/active_etf/etf_components/ETF_Codes/five_spread')
