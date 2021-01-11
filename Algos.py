@@ -26,9 +26,13 @@ class Algos(QMainWindow, form_class):
 
 
 ########변수########
-        self.kodex_bid_price = [] ; self.tiger_bid_price = [] 
-        self.spread = [] ; self.spread_inv = []
+        # algo_1
+        self.spread = []
         self.time_count = 0
+        # algo_2
+        self.kodex_bid_price = [] ; self.tiger_bid_price = [] 
+        self.spread_inv = []
+
 #############################################################
         
 
@@ -99,8 +103,9 @@ class Algos(QMainWindow, form_class):
         
         ###초기 설정###
         leverage = 1       
-        init_count = 20
-        time_term = 30
+        init_count = 30
+        time_term = 10
+        hedge_ratio = 11
 
         kodex200 = 'KODEX 200'
         kodex_inv = 'KODEX 인버스'      
@@ -109,8 +114,7 @@ class Algos(QMainWindow, form_class):
         ###스프레드 계산###
         if len(bid_price)!=2:
             pass
-        else:    
-            hedge_ratio = abs(int(bid_price['069500']/bid_price['114800']))
+        else:               
             print(bid_price['069500'],bid_price['114800'],hedge_ratio)
             self.spread_inv.append(bid_price['069500']-bid_price['114800']*hedge_ratio)             
             
@@ -125,7 +129,8 @@ class Algos(QMainWindow, form_class):
 
             threshold = spread_inv.rolling(window=60,center=False).mean()
 
-            print('spread_inv :',round(spread_inv.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]+10),4))
+            print('spread_inv :',round(spread_inv.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '/',
+                    round(spread_inv.iloc[-1]-(threshold.iloc[-1]),4))
 
             if self.time_count % time_term == 0:
                 if spread_inv.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[kodex200] >=1:
@@ -133,18 +138,20 @@ class Algos(QMainWindow, form_class):
                     self.sell_kodex200(0,leverage)
                     self.buy_kodex_inv(0,leverage*hedge_ratio)
 
+
                 elif spread_inv.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[kodex_inv]>=1 :
                     print('long position')
-                    self.buy_kodex200(0,leverage)
                     self.sell_kodex_inv(0,leverage*hedge_ratio)
+                    self.buy_kodex200(0,leverage)                  
             self.time_count += 1
+            print('time to trade : ',  time_term - (self.time_count)&time_term)
 
  
             if (threshold.iloc[-1]-5)  < spread_inv.iloc[-1] < (threshold.iloc[-1]+5) :
                 print('close position')                    
                 if amount[kodex200] < init_count :
-                    self.buy_kodex200(0,init_count-amount[kodex200])
                     self.sell_kodex_inv(0,(init_count-amount[kodex200])*hedge_ratio)
+                    self.buy_kodex200(0,init_count-amount[kodex200])
                 elif amount[kodex200] > init_count :
                     self.sell_kodex200(0,amount[kodex200]-init_count)
                     self.buy_kodex_inv(0,(amount[kodex200]-init_count)*hedge_ratio)

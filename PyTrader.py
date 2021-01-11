@@ -20,7 +20,10 @@ if __name__ == "__main__":
         
         ####현재시간####
         now = datetime.now()
-        print(now.strftime('%H%M%S'))
+        if int(now.strftime('%H%M%S')) > 124000:
+            break
+        else:
+            print(now.strftime('%H%M%S'))
 
         ####종목수량,매도/매수호가####
         amount,bid_price,ask_price = algo.get_data()
