@@ -99,10 +99,13 @@ class Kiwoom(QAxWidget):
         if rqname == "손익요청":
             profit = self.GetCommData(trcode, rqname, 0, "실현손익")
             self.login_event_loop.exit()
-            self.profit.append(int(profit))
-            if len(self.profit) ==2 :
-                print('총평가손익 변동 :',self.profit[0] -self.profit[1] )
-                del self.profit[1]
+            try:
+                self.profit.append(int(profit))
+                if len(self.profit) ==2 :
+                    print('총실현손익 변동 :',self.profit[1] -self.profit[0] )
+                    del self.profit[1]
+            except:
+                pass
 
         elif rqname == "계좌평가현황":
             rows = self.GetRepeatCnt(trcode, rqname)

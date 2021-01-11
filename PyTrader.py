@@ -20,7 +20,7 @@ if __name__ == "__main__":
         
         ####현재시간####
         now = datetime.now()
-        if int(now.strftime('%H%M%S')) > 145000:
+        if int(now.strftime('%H%M%S')) > 155000:
             break
         else:
             print(now.strftime('%H%M%S'))
@@ -29,8 +29,9 @@ if __name__ == "__main__":
         amount,bid_price,ask_price = algo.get_data()
 
         ###알고리즘###
-        algo.one(amount,bid_price,ask_price)
+        # algo.one(amount,bid_price,ask_price)
         # algo.two(amount,bid_price,ask_price)
+        algo.three(amount,bid_price,ask_price)
 
         time.sleep(1)
 
