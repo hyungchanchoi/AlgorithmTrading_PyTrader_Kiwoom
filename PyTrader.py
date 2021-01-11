@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
         ###알고리즘###
         algo.one(amount,bid_price,ask_price)
-        algo.two(amount,bid_price,ask_price)
+        # algo.two(amount,bid_price,ask_price)
 
         time.sleep(1)
 

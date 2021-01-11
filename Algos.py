@@ -28,11 +28,12 @@ class Algos(QMainWindow, form_class):
 ########변수########
         self.kodex_bid_price = [] ; self.tiger_bid_price = [] 
         self.spread = [] ; self.spread_inv = []
+        self.time_count = 0
 #############################################################
         
 
 ########종목코드 실시간 등록########
-        self.codes = '069500;102110;114800'
+        self.codes = '069500;114800'
         self.kiwoom.subscribe_stock_conclusion('2000', self.codes)
 ##############################################################
 
@@ -91,25 +92,27 @@ class Algos(QMainWindow, form_class):
         print('[algo_one]-----------------------------------------------------------------------------')   
         
         ### 알고리즘 요약
-        # 1. kodex200과 kodex_inv의 매도가격 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
         # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
         # 3. 숏 또는 롱 포지션 취한 후, 
         # 4. 반대 포지션으로 청산
         
         ###초기 설정###
-        leverage = 1
-        
-        init_count = 30
+        leverage = 1       
+        init_count = 20
+        time_term = 30 
 
         kodex200 = 'KODEX 200'
         kodex_inv = 'KODEX 인버스'      
-        bid_ask_spread = 10
+        bid_ask_spread = 15
 
         ###스프레드 계산###
-        if len(bid_price)!=3:
+        if len(bid_price)!=2:
             pass
         else:    
-            self.spread_inv.append(bid_price['069500']-bid_price['114800']) 
+            hedge_ratio = abs(int(bid_price['069500']/bid_price['114800']))
+            print(bid_price['069500'],bid_price['114800'],hedge_ratio)
+            self.spread_inv.append(bid_price['069500']-bid_price['114800']*hedge_ratio)             
             
             if len(self.spread_inv) <= 60:
                 print(len(self.spread_inv),'/60')
@@ -124,24 +127,28 @@ class Algos(QMainWindow, form_class):
 
             print('spread_inv :',round(spread_inv.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]+10),4))
 
-            if spread_inv.iloc[-1] > (threshold.iloc[-1]+10) and amount[kodex200] >=1:
-                print('short position')
-                self.sell_kodex200(0,leverage)
-                self.buy_inverse(0,leverage)
+            if self.time_count % time_term == 0:
+                if spread_inv.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[kodex200] >=1:
+                    print('short position')
+                    self.sell_kodex200(0,leverage)
+                    self.buy_kodex_inv(0,leverage*hedge_ratio)
 
-            elif spread_inv.iloc[-1] < - (threshold.iloc[-1]+10) and amount[kodex_inv]>=1 :
-                print('long position')
-                self.buy_kodex200(0,leverage)
-                self.sell_inverse(0,leverage)
+                elif spread_inv.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[kodex_inv]>=1 :
+                    print('long position')
+                    self.buy_kodex200(0,leverage)
+                    self.sell_kodex_inv(0,leverage*hedge_ratio)
+                self.time_count += 1
 
-            elif abs(spread_inv.iloc[-1]) < threshold.iloc[-1] :
+ 
+            if (threshold.iloc[-1]-5)  < spread_inv.iloc[-1] < (threshold.iloc[-1]+5) :
                 print('close position')                    
                 if amount[kodex200] < init_count :
                     self.buy_kodex200(0,init_count-amount[kodex200])
-                    self.sell_inverse(0,init_count-amount[kodex200])
+                    self.sell_kodex_inv(0,(init_count-amount[kodex200])*hedge_ratio)
                 elif amount[kodex200] > init_count :
                     self.sell_kodex200(0,amount[kodex200]-init_count)
-                    self.buy_inverse(0,amount[kodex200]-init_count)
+                    self.buy_kodex_inv(0,(amount[kodex200]-init_count)*hedge_ratio)
+                        
         else:
             pass
 
@@ -162,7 +169,7 @@ class Algos(QMainWindow, form_class):
 
         ###초기 설정###
         leverage = 1       
-        init_count = 30
+        init_count = 20
         bid_ask_spread = 15
 
         kodex200 = 'KODEX 200'   
