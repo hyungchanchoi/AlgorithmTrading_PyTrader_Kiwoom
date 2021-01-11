@@ -27,7 +27,7 @@ class Kiwoom(QAxWidget):
         self.price = {}
         self.rate = {}
         self.amount = {}
-        self.profit = {}
+        self.profit = []
         self.bid_price = {}  # 매수호가
         self.ask_price = {}  # 매도호가
 ##########################################################################
@@ -107,7 +107,7 @@ class Kiwoom(QAxWidget):
                 amount = self.GetCommData(trcode, rqname, i, "보유수량")
                 buy = self.GetCommData(trcode, rqname, i, "평균단가")
                 self.amount[code] = int(amount)
-                self.profit[code] = int(buy)                            
+                # self.profit[code] = int(buy)                            
             print(self.amount)
         self.login_event_loop.exit()
             
@@ -139,7 +139,10 @@ class Kiwoom(QAxWidget):
     def _handler_chejan_data(self, gubun, item_cnt, fid_list):
         print('[', self.GetChejanData(908), ']', self.GetChejanData(302), ':', self.GetChejanData(905),
                    self.GetChejanData(900), '주', self.GetChejanData(10), '원')
+        self.profit.append(int(self.GetChejanData(914)))
+        print(sum(self.profit))
         self.login_event_loop.exit()
+        time.sleep(0.2)
 ##########################################################################    
 
 
