@@ -5,6 +5,7 @@ from PyQt5.QtCore import *
 import time
 import pandas as pd
 import sqlite3
+from datetime import datetime,timedelta
 
 TR_REQ_TIME_INTERVAL = 0.2
 
@@ -24,10 +25,11 @@ class Kiwoom(QAxWidget):
 
 
 #### 변수 #################################################################
+        self.today = 20210111
         self.price = {}
         self.rate = {}
         self.amount = {}
-        self.profit = []
+        self.profit =[]
         self.bid_price = {}  # 매수호가
         self.ask_price = {}  # 매도호가
 ##########################################################################
@@ -70,15 +72,14 @@ class Kiwoom(QAxWidget):
 
     def get_amount(self):
         # TR 요청
-        # self.request_opw00001()
+        self.request_opt10074()
         self.request_opw00004()
 
-    def request_opw00001(self):
+    def request_opt10074(self):
         self.SetInputValue("계좌번호", self.account)
-        self.SetInputValue("비밀번호", "")
-        self.SetInputValue("비밀번호입력매체구분", "00")
-        self.SetInputValue("조회구분", 2)
-        self.CommRqData("예수금조회", "opw00001", 0, "9001")
+        self.SetInputValue("시작일자", self.today)
+        self.SetInputValue("종료일자", self.today)
+        self.CommRqData("손익요청", "opt10074", 0, "9001")
         self.login_event_loop.exec()
 
     def request_opw00004(self):
@@ -95,10 +96,13 @@ class Kiwoom(QAxWidget):
         return ret
 
     def _handler_tr_data(self, screen_no, rqname, trcode, record, next):
-        if rqname == "예수금조회":
-            주문가능금액 = self.GetCommData(trcode, rqname, 0, "주문가능금액")
-            self.cash = int(주문가능금액)
+        if rqname == "손익요청":
+            profit = self.GetCommData(trcode, rqname, 0, "실현손익")
             self.login_event_loop.exit()
+            self.profit.append(int(profit))
+            if len(self.profit) ==2 :
+                print('총평가손익 변동 :',self.profit[0] -self.profit[1] )
+                del self.profit[1]
 
         elif rqname == "계좌평가현황":
             rows = self.GetRepeatCnt(trcode, rqname)
@@ -138,11 +142,8 @@ class Kiwoom(QAxWidget):
 
     def _handler_chejan_data(self, gubun, item_cnt, fid_list):
         print('[', self.GetChejanData(908), ']', self.GetChejanData(302), ':', self.GetChejanData(905),
-                   self.GetChejanData(900), '주', self.GetChejanData(10), '원')
-        self.profit.append(int(self.GetChejanData(914)))
-        print(sum(self.profit))
+                   self.GetChejanData(900), '주', self.GetChejanData(10), '원') 
         self.login_event_loop.exit()
-        time.sleep(0.2)
 ##########################################################################    
 
 

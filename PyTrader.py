@@ -20,7 +20,7 @@ if __name__ == "__main__":
         
         ####현재시간####
         now = datetime.now()
-        if int(now.strftime('%H%M%S')) > 124000:
+        if int(now.strftime('%H%M%S')) > 145000:
             break
         else:
             print(now.strftime('%H%M%S'))
