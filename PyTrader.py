@@ -9,26 +9,27 @@ from datetime import datetime,timedelta
 # form_class = uic.loadUiType("_pytrader.ui")[0]
 
 
-############################## 트레이딩 ##################################
+############################## trading ##################################
 if __name__ == "__main__":
     
     app = QApplication(sys.argv)
     algo = Algos()
 
-    print('-------------------------------거래시작------------------------------------')
-    while now.strftime('%H%M%S') != 152101:
+    start = input('Did you check the initial condition of Algorithm? (yes or no) :')
+    print('------------------------------- start trading ------------------------------------')    
+    while start == 'yes' :
         
-        ####현재시간####
+        #### current time ####
         now = datetime.now()
         if int(now.strftime('%H%M%S')) > 155000:
             break
         else:
-            print(now.strftime('%H%M%S'))
+            print('---',now.strftime('%H%M%S'),'---')
 
-        ####종목수량,매도/매수호가####
+        #### num,bid,ask of stock ####
         amount,bid_price,ask_price = algo.get_data()
 
-        ###알고리즘###
+        ### Algorithm ###
         # algo.one(amount,bid_price,ask_price)
         # algo.two(amount,bid_price,ask_price)
         algo.three(amount,bid_price,ask_price)

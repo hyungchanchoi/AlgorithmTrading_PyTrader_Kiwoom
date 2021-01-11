@@ -235,15 +235,15 @@ class Algos(QMainWindow, form_class):
         print('[algo_one]-----------------------------------------------------------------------------')   
         
         ### 알고리즘 요약
-        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 1. tiget_inv과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
         # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
         # 3. 숏 또는 롱 포지션 취한 후, 
         # 4. 반대 포지션으로 청산
         
-        ###초기 설정###
+        ### initial condition ###
         leverage = 1       
         init_count = 150
-        time_term = 2
+        time_term = 3
         hedge_ratio = 1
 
         kodex_inv = 'KODEX 인버스' 
@@ -253,7 +253,7 @@ class Algos(QMainWindow, form_class):
         ###스프레드 계산###
         if len(bid_price)==2:              
             print(bid_price)
-            self.spread_3.append(bid_price['123310']-bid_price['114800']*hedge_ratio)             
+            self.spread_3.append(-bid_price['123310']+bid_price['114800']*hedge_ratio)             
             
             if len(self.spread_3) <= 60:
                 print(len(self.spread_3),'/60')
@@ -270,13 +270,13 @@ class Algos(QMainWindow, form_class):
                     round(spread_3.iloc[-1]-(threshold.iloc[-1]),4))
 
             if self.time_count % time_term == 0:
-                if spread_3.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[kodex_inv] >=1:
+                if spread_3.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[tiger_inv] >=1:
                     print('short position')
                     self.sell_tiger_inv(0,leverage)
                     self.buy_kodex_inv(0,leverage*hedge_ratio)
 
 
-                elif spread_3.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[tiger_inv]>=1 :
+                elif spread_3.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[kodex_inv]>=1 :
                     print('long position')
                     self.sell_kodex_inv(0,leverage*hedge_ratio)
                     self.buy_tiger_inv(0,leverage)                  
