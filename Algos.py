@@ -100,7 +100,7 @@ class Algos(QMainWindow, form_class):
         ###초기 설정###
         leverage = 1       
         init_count = 20
-        time_term = 30 
+        time_term = 30
 
         kodex200 = 'KODEX 200'
         kodex_inv = 'KODEX 인버스'      
@@ -137,7 +137,7 @@ class Algos(QMainWindow, form_class):
                     print('long position')
                     self.buy_kodex200(0,leverage)
                     self.sell_kodex_inv(0,leverage*hedge_ratio)
-                self.time_count += 1
+            self.time_count += 1
 
  
             if (threshold.iloc[-1]-5)  < spread_inv.iloc[-1] < (threshold.iloc[-1]+5) :
