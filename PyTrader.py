@@ -34,7 +34,7 @@ if __name__ == "__main__":
         # algo.two(amount,bid_price,ask_price)
         algo.three(amount,bid_price,ask_price)
 
-        time.sleep(1)
+        time.sleep(1.2)
 
     app.exec_() 
 

@@ -248,7 +248,7 @@ class Algos(QMainWindow, form_class):
 
         kodex_inv = 'KODEX 인버스' 
         tiger_inv = 'TIGER 인버스'
-        bid_ask_spread = 20
+        bid_ask_spread = 15
 
         ###스프레드 계산###
         if len(bid_price)==2:              
@@ -285,16 +285,19 @@ class Algos(QMainWindow, form_class):
             print('time to trade : ',  time_term - (self.time_count)%time_term)
 
  
-            if (threshold.iloc[-1]-5)  < spread_3.iloc[-1] < (threshold.iloc[-1]+5) :
+            if abs(spread_3.iloc[-1]) < (threshold.iloc[-1]) :
                 print('close position')                    
-                if amount[kodex_inv] < init_count :
+                if amount[kodex_inv] > init_count :
                     self.sell_kodex_inv(0,(init_count-amount[kodex_inv])*hedge_ratio)
                     self.buy_tiger_inv(0,init_count-amount[kodex_inv])
-                elif amount[kodex_inv] > init_count :
+                elif amount[kodex_inv] < init_count :
                     self.sell_tiger_inv(0,amount[kodex_inv]-init_count)
                     self.buy_kodex_inv(0,(amount[kodex_inv]-init_count)*hedge_ratio)                       
         else:
             pass
+
+        print('')
+        print('-----------------------------------------------------------------------')
 
 
 ################################################### Algo_4##########################################################

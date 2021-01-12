@@ -112,7 +112,7 @@ class Kiwoom(QAxWidget):
             for i in range(rows):
                 code = self.GetCommData(trcode, rqname, i, "종목명")
                 amount = self.GetCommData(trcode, rqname, i, "보유수량")
-                buy = self.GetCommData(trcode, rqname, i, "평균단가")
+                # buy = self.GetCommData(trcode, rqname, i, "평균단가")
                 self.amount[code] = int(amount)
                 # self.profit[code] = int(buy)                            
             print(self.amount)
