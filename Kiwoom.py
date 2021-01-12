@@ -75,7 +75,7 @@ class Kiwoom(QAxWidget):
     def get_amount(self):
         # TR 요청
         self.request_opt10074()
-        # self.request_opw00001()
+        self.request_opw00018()
         self.request_opw00004()
 
     def request_opt10074(self):
@@ -85,12 +85,12 @@ class Kiwoom(QAxWidget):
         self.CommRqData("손익요청", "opt10074", 0, "9001")
         self.login_event_loop.exec()
 
-    def request_opw00001(self):
+    def request_opw00018(self):
         self.SetInputValue("계좌번호", self.account)
         self.SetInputValue("비밀번호", "")
         self.SetInputValue("비밀번호입력매체구분", "00")
-        self.SetInputValue("조회구분", 2)
-        self.CommRqData("주문가능금액", "opw00001", 0, "9002")
+        self.SetInputValue("조회구분", 1)
+        self.CommRqData("총평가손익금액", "opw00018", 0, "9002")
         self.login_event_loop.exec()
 
     def request_opw00004(self):
@@ -118,12 +118,12 @@ class Kiwoom(QAxWidget):
             except:
                 pass
 
-        if rqname == "주문가능금액":
-            cash = self.GetCommData(trcode, rqname, 0, "주문가능금액")
+        if rqname == "총평가손익금액":
+            cash = self.GetCommData(trcode, rqname, 0, "총평가손익금액")
             self.login_event_loop.exit()
             try:
                 self.cash= int(cash)
-                print('주문가능금액 :',self.cash )
+                print('총평가손익금액 :',self.cash )
             except:
                 pass
 
@@ -132,11 +132,11 @@ class Kiwoom(QAxWidget):
             for i in range(rows):
                 code = self.GetCommData(trcode, rqname, i, "종목명")
                 amount = self.GetCommData(trcode, rqname, i, "보유수량")
-                earning = self.GetCommData(trcode, rqname, i, "손익금액")
+                # earning = self.GetCommData(trcode, rqname, i, "손익금액")
                 self.amount[code] = int(amount)
-                self.earning[code] = int(earning)                            
+                # self.earning[code] = int(earning)                            
             print('AMOUNT :',self.amount)
-            print('Earnings :',self.earning)
+            # print('Earnings :',self.earning)
         self.login_event_loop.exit()
             
 

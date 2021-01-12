@@ -20,13 +20,12 @@ class Algos(QMainWindow, form_class):
         self.trade_stocks_done = False                
         self.kiwoom = Kiwoom()
 
-########계좌번호######## 
+########계좌번호#################### 
         self.account = 5624118510
-#############################################################
+#####################################
 
 
-########변수########
-        
+########변수####################     
         # 공통
         self.time_count = 0
         # algo_1
@@ -37,31 +36,35 @@ class Algos(QMainWindow, form_class):
         self.spread_3 = []
         # algo_4 
         self.spread_4 = []
-
-#############################################################
-        
-
-########종목코드 실시간 등록########
-        self.codes_zero = '069500;102110;114800;123310'
-        # self.codes = self.codes_zero
-        self.kiwoom.subscribe_stock_conclusion('2000', self.codes_zero)
-##############################################################
+#################################
 
 
-############종목수량, 매수/매도호가 ##########################
+########종목코드 실시간 등록##############
+        codes_one = '069500;114800'
+        codes = codes_one
+        self.kiwoom.subscribe_stock_conclusion('2000',codes)
+############################################
+
+
+############종목수량, 매수/매도호가 #############
     def get_data(self):
         self.kiwoom.get_amount()
         amount = self.kiwoom.amount 
         bid_price = self.kiwoom.bid_price
         ask_price = self.kiwoom.ask_price
-        earning = self.kiwoom.earning
-        return amount , bid_price, ask_price , earning
-###############################################################################################
+        # earning = self.kiwoom.earning
+        return amount , bid_price, ask_price 
+#################################################
 
 
 
 ########매수/매도 메소드###########################################################################################
  # self.kiwoom.send_order("send_order_req", "0101", account, order_type, code, num, price, hoga, "")    00:지정가, 03 :시장가
+    def buy_dafualt(self,code,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, code, leverage, 0, '03', "")   
+
+    def sell_defualt(self,code,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, code, leverage, 0, '03', "")   
 
     def buy_kodex(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 364690, leverage, price, '03', "")   
@@ -117,14 +120,29 @@ class Algos(QMainWindow, form_class):
 ### trading algorithms ###
 ################################################### Algo_0##########################################################
     def zero(self,amount,bid_price,ask_price,earning):
-        print('[algo_zero]---------------------------------------------------------------------')   
+            
+        ### 알고리즘 요약
+        # 1. 가지고 있는 모든 포지션의 손익이 +인 경우 일괄매도        
+
+        ### initial condition ###
+        kodex200 = 'KODEX 200'
+        kodex_inv = 'KODEX 인버스'   
+
+        ### sell if profit is plus ###
+        if self.cash > 1000:
+            self.sell_kodex200(0,amount[kodex200])
+            self.sell_kodex_inv(0,amount[kodex_inv])
+            time.sleep(5)
+            self.buy_kodex200(0,amount[kodex200])
+            self.buy_kodex_inv(0,amount[kodex_inv])
+
+
+################################################### Algo_0.5##########################################################
+    def zero_5(self,amount,bid_price,ask_price,earning):
+        print('[algo_zero_5]---------------------------------------------------------------------')   
         
         ### 알고리즘 요약
-        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
-        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
-        # 3. 숏 또는 롱 포지션 취한 후, 
-        # 4. 반대 포지션으로 청산
-        
+        # 1. 가지고 있는 모든 포지션의 손익이 +인 경우 일괄매도        
 
         ###초기 설정###
         kodex200 = 'KODEX 200'
@@ -166,6 +184,7 @@ class Algos(QMainWindow, form_class):
 
         print('------------------------------------------------------------------------------')
 
+
 ################################################### Algo_1##########################################################
     def one(self,amount,bid_price,ask_price):
         print('[algo_one]-----------------------------------------------------------------------------')   
@@ -200,7 +219,7 @@ class Algos(QMainWindow, form_class):
         ###이동평균 계산 후 트레이딩 시작###
         if len(self.spread_1)>=60:
  
-            spspread_1read_inv = pd.Series(self.spread_1)
+            spread_inv = pd.Series(self.spread_1)
 
             threshold = spread_1.rolling(window=60,center=False).mean()
 
@@ -301,7 +320,7 @@ class Algos(QMainWindow, form_class):
         print('[algo_three]----------------------------------------------------------------------')   
         
         ### 알고리즘 요약
-        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 1. KODEX 인버스과 TIGER 인버스의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
         # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
         # 3. 숏 또는 롱 포지션 취한 후, 
         # 4. 반대 포지션으로 청산
@@ -368,7 +387,8 @@ class Algos(QMainWindow, form_class):
         print('[algo_four]--------------------------------------------------------------------')   
         
         ### 알고리즘 요약
-        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 1. KODEX 코스닥150선물인버스과 TIGER 코스닥150선물인버스의 매수호가(매도가격) 스프레드가 
+        #    지난 60개의 데이터 이동평균과 달라지는 경우,
         # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
         # 3. 숏 또는 롱 포지션 취한 후, 
         # 4. 반대 포지션으로 청산
