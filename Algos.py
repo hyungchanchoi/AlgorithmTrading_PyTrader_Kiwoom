@@ -35,12 +35,14 @@ class Algos(QMainWindow, form_class):
         self.spread_2 = []
         # algo_3 
         self.spread_3 = []
+        # algo_4 
+        self.spread_4 = []
 
 #############################################################
         
 
 ########종목코드 실시간 등록########
-        self.codes = '123310;114800'
+        self.codes = '123310;114800;251340;250780'
         self.kiwoom.subscribe_stock_conclusion('2000', self.codes)
 ##############################################################
 
@@ -95,6 +97,17 @@ class Algos(QMainWindow, form_class):
     def sell_tiger_inv(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 123310, leverage, price, '03', "")
 
+    def buy_kodex_kosdaqinv(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 251340, leverage, price, '03', "")
+        
+    def sell_kodex_kosdaqinv(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 251340, leverage, price, '03', "")
+
+    def buy_tiger_kosdaqinv(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 250780, leverage, price, '03', "")
+        
+    def sell_tiger_kosdaqinv(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 250780, leverage, price, '03', "")
 ###################################################################################################################
 
 
@@ -232,28 +245,28 @@ class Algos(QMainWindow, form_class):
 
 ################################################### Algo_3##########################################################
     def three(self,amount,bid_price,ask_price):
-        print('[algo_one]-----------------------------------------------------------------------------')   
+        print('[algo_three]----------------------------------------------------------------------')   
         
         ### 알고리즘 요약
-        # 1. tiget_inv과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
         # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
         # 3. 숏 또는 롱 포지션 취한 후, 
         # 4. 반대 포지션으로 청산
         
-        ### initial condition ###
-        leverage = 1       
-        init_count = 150
-        time_term = 3
+        ###초기 설정###
+        leverage = 5
+        init_count = 75
+        time_term = 1
         hedge_ratio = 1
 
         kodex_inv = 'KODEX 인버스' 
         tiger_inv = 'TIGER 인버스'
-        bid_ask_spread = 15
+        bid_ask_spread = 20
 
         ###스프레드 계산###
-        if len(bid_price)==2:              
+        if '114800' in bid_price.keys() and '123310' in bid_price.keys():              
             print(bid_price)
-            self.spread_3.append(-bid_price['123310']+bid_price['114800']*hedge_ratio)             
+            self.spread_3.append(bid_price['123310']-bid_price['114800']*hedge_ratio)             
             
             if len(self.spread_3) <= 60:
                 print(len(self.spread_3),'/60')
@@ -270,106 +283,101 @@ class Algos(QMainWindow, form_class):
                     round(spread_3.iloc[-1]-(threshold.iloc[-1]),4))
 
             if self.time_count % time_term == 0:
-                if spread_3.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[tiger_inv] >=1:
+                if spread_3.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[kodex_inv] >=1:
                     print('short position')
                     self.sell_tiger_inv(0,leverage)
                     self.buy_kodex_inv(0,leverage*hedge_ratio)
 
 
-                elif spread_3.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[kodex_inv]>=1 :
+                elif spread_3.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[tiger_inv]>=1 :
                     print('long position')
                     self.sell_kodex_inv(0,leverage*hedge_ratio)
                     self.buy_tiger_inv(0,leverage)                  
             self.time_count += 1
-
             print('time to trade : ',  time_term - (self.time_count)%time_term)
 
  
-            if abs(spread_3.iloc[-1]) < (threshold.iloc[-1]) :
+            if abs(spread_3.iloc[-1]) < (threshold.iloc[-1]+5) :
                 print('close position')                    
                 if amount[kodex_inv] > init_count :
-                    self.sell_kodex_inv(0,(init_count-amount[kodex_inv])*hedge_ratio)
-                    self.buy_tiger_inv(0,init_count-amount[kodex_inv])
+                    self.sell_kodex_inv(0,amount[kodex_inv]-init_count)
+                    self.buy_tiger_inv(0,(amount[kodex_inv]-init_count)*hedge_ratio)
                 elif amount[kodex_inv] < init_count :
-                    self.sell_tiger_inv(0,amount[kodex_inv]-init_count)
-                    self.buy_kodex_inv(0,(amount[kodex_inv]-init_count)*hedge_ratio)                       
+                    self.sell_tiger_inv(0,(init_count-amount[kodex_inv])*hedge_ratio)
+                    self.buy_kodex_inv(0,init_count-amount[kodex_inv])
+
         else:
             pass
 
-        print('')
-        print('-----------------------------------------------------------------------')
+
+        print('------------------------------------------------------------------------------')
 
 
 ################################################### Algo_4##########################################################
-    def four(self):
-    
-        leverage = 1
-
-        init_count = 60  #초기 종목 개수
+    def four(self,amount,bid_price,ask_price):
+        print('[algo_four]--------------------------------------------------------------------')   
         
-        kospi = 'KODEX 200'
-        kodex = 'KODEX 혁신기술테마액티브'
-        tiger = 'TIGER AI코리아그로스액티브'       
+        ### 알고리즘 요약
+        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
         
-        self.kiwoom.get_amount()
-        amount = self.kiwoom.amount
+        ###초기 설정###
+        leverage = 5
+        init_count = 75
+        time_term = 1
+        hedge_ratio = 1
 
-        profit = self.kiwoom.profit
-                    
-        price = self.kiwoom.price
-        ret = self.kiwoom.rate
-        bid_price = self.kiwoom.bid_price
-        ask_price = self.kiwoom.ask_price
-        print(price)
-        print(ret)
-        
-        if len(price)!=3:
-            pass
-        else:
-            kodex_bid_price = bid_price['364690'] ; tiger_bid_price = bid_price['365040'] 
-            kodex_ask_price = ask_price['364690'] ; tiger_ask_price = ask_price['365040']       
-            kodex_profit = profit[kodex]          ; tiger_profit = profit[tiger]
+        kodex_kosdaqinv = 'KODEX 코스닥150선물인버스' 
+        tiger_kosdaqinv = 'TIGER 코스닥150선물인버스'
+        bid_ask_spread = 20
 
-            kodex_mid_price = (kodex_bid_price+kodex_ask_price)/2
-            tiger_mid_price = (tiger_bid_price+tiger_ask_price)/2
+        ###스프레드 계산###
+        if '251340' in bid_price.keys() and '250780' in bid_price.keys() :      
+            print(bid_price)
+            self.spread_4.append(bid_price['250780']-bid_price['251340']*hedge_ratio)             
             
-            self.spread.append( kodex_mid_price - tiger_mid_price ) 
-            
-            if len(self.spread) <= 60:
-                print(len(self.spread),'/60')
+            if len(self.spread_4) <= 60:
+                print(len(self.spread_4),'/60')
 
 
-        if len(self.spread)>=60:
+        ###이동평균 계산 후 트레이딩 시작###
+        if len(self.spread_4)>=60:
  
-            spread = pd.Series(self.spread)
+            spread_4 = pd.Series(self.spread_4)
 
-            threshold = spread.rolling(window=60,center=False).mean()
+            threshold = spread_4.rolling(window=60,center=False).mean()
 
-            print('spread :',round(spread.iloc[-1],4), 'threshold :',round(threshold.iloc[-1],4))
+            print('spread_4 :',round(spread_4.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '/',
+                    round(spread_4.iloc[-1]-(threshold.iloc[-1]),4))
 
-            if spread.iloc[-1] > threshold.iloc[-1] and amount[kodex] >=1:
-                print('short position')
-                self.sell_kodex(0,leverage)
-                self.buy_tiger(0,leverage)
+            if self.time_count % time_term == 0:
+                if spread_4.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[tiger_kosdaqinv] >=1:
+                    print('short position')
+                    self.sell_tiger_kosadqinv(0,leverage)
+                    self.buy_kodex_kosadqinv(0,leverage*hedge_ratio)
 
-            elif spread.iloc[-1] < - threshold.iloc[-1] and amount[tiger]>=1 :
-                print('long position')
-                self.buy_kodex(0,leverage)
-                self.sell_tiger(0,leverage)
 
-            elif abs(spread.iloc[-1]) < threshold.iloc[-1] :
+                elif spread_4.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[kodex_kosdaqinv]>=1 :
+                    print('long position')
+                    self.sell_kodex_kosadqinv(0,leverage*hedge_ratio)
+                    self.buy_tiger_kosadqinv(0,leverage)                  
+            self.time_count += 1
+            print('time to trade : ',  time_term - (self.time_count)%time_term)
+
+ 
+            if abs(spread_4.iloc[-1]) < (threshold.iloc[-1]+5) :
                 print('close position')                    
-                if amount[kodex] < init_count and profit[kodex] > kodex_ask_price and profit[tiger] > tiger_bid_price:
-                    self.buy_kodex(0,init_count-amount[kodex])
-                    self.sell_tiger(0,init_count-amount[kodex])
-                elif amount[kodex] > init_count and profit[kodex] > kodex_bid_price and profit[tiger] > tiger_ask_price:
-                    self.sell_kodex(0,amount[kodex]-init_count)
-                    self.buy_tiger(0,amount[kodex]-init_count)
+                if amount[kodex_kosdaqinv] > init_count :
+                    self.sell_kodex_kosadqinv(0,(amount[kodex_kosdaqinv])-init_count)
+                    self.buy_tiger_kosadqinv(0,(amount[kodex_kosdaqinv])*hedge_ratio-init_count)
+                elif amount[kodex_kosdaqinv] < init_count :
+                    self.sell_tiger_kosadqinv(0,init_count-amount[kodex_kosdaqinv])
+                    self.buy_kodex_kosadqinv(0,(init_count-amount[kodex_kosdaqinv])*hedge_ratio)
+                        
         else:
             pass
-
-        self.kiwoom.get_amount()
-        amount = self.kiwoom.amount
 
 
         print('------------------------------------------------------------------------------')

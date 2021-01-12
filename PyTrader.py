@@ -33,6 +33,7 @@ if __name__ == "__main__":
         # algo.one(amount,bid_price,ask_price)
         # algo.two(amount,bid_price,ask_price)
         algo.three(amount,bid_price,ask_price)
+        algo.four(amount,bid_price,ask_price)
 
         time.sleep(1.2)
 
