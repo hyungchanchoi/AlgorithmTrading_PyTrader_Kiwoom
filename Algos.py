@@ -42,8 +42,9 @@ class Algos(QMainWindow, form_class):
         
 
 ########종목코드 실시간 등록########
-        self.codes = '123310;114800;251340;250780'
-        self.kiwoom.subscribe_stock_conclusion('2000', self.codes)
+        self.codes_zero = '069500;102110;114800;123310'
+        # self.codes = self.codes_zero
+        self.kiwoom.subscribe_stock_conclusion('2000', self.codes_zero)
 ##############################################################
 
 
@@ -53,7 +54,8 @@ class Algos(QMainWindow, form_class):
         amount = self.kiwoom.amount 
         bid_price = self.kiwoom.bid_price
         ask_price = self.kiwoom.ask_price
-        return amount , bid_price, ask_price
+        earning = self.kiwoom.earning
+        return amount , bid_price, ask_price , earning
 ###############################################################################################
 
 
@@ -113,6 +115,57 @@ class Algos(QMainWindow, form_class):
 
 
 ### trading algorithms ###
+################################################### Algo_0##########################################################
+    def zero(self,amount,bid_price,ask_price,earning):
+        print('[algo_zero]---------------------------------------------------------------------')   
+        
+        ### 알고리즘 요약
+        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
+        
+
+        ###초기 설정###
+        kodex200 = 'KODEX 200'
+        tiger200 = 'TIGER 200'
+        kodex_inv = 'KODEX 인버스'  
+        tiger_inv = 'TIGER 인버스'    
+
+
+        ### MAKE BASKET###
+        try:
+            if len(self.kiwoom.amount) == 0:
+                
+                cash = 2500000
+                
+                amount_kodex200 = int(cash/2/ bid_price['069500'])   
+                # amount_tiger200 = cash/4/ bid_price['102110']   
+                amount_kodexinv = int(cash/2/ bid_price['114800'])   
+                # amount_tigerinv = cash/4/ bid_price['123310']               
+
+                self.buy_kodex200(0,amount_kodex200)
+                self.buy_kodex_inv(0,amount_kodexinv)
+                # self.buy_tiger200(0,amount_tiger200)
+                # self.buy_tiger_inv(0,amount_tigerinv)
+            else:               
+                pass
+            
+
+            ### sell if profit is plus ###
+            if earning['069500'] + earning['114800'] > (amount_kodex200 + amount_kodexinv) * 5:
+                self.sell_kodex200(0,amount[kodex200])
+                self.sell_kodex_inv(0,amount[kodex_inv])
+            
+            # if earning['102110'] + earning['123310'] > (amount_tiger200 + amount_tigerinv) * 5:
+            #     self.sell_tiger200(0,amount[tiger200])
+            #     self.sell_tiger_inv(0,amount[tiger_inv])
+
+        except:
+            pass
+
+        print('------------------------------------------------------------------------------')
+
 ################################################### Algo_1##########################################################
     def one(self,amount,bid_price,ask_price):
         print('[algo_one]-----------------------------------------------------------------------------')   
@@ -310,9 +363,6 @@ class Algos(QMainWindow, form_class):
             pass
 
 
-        print('------------------------------------------------------------------------------')
-
-
 ################################################### Algo_4##########################################################
     def four(self,amount,bid_price,ask_price):
         print('[algo_four]--------------------------------------------------------------------')   
@@ -355,14 +405,14 @@ class Algos(QMainWindow, form_class):
             if self.time_count % time_term == 0:
                 if spread_4.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[tiger_kosdaqinv] >=1:
                     print('short position')
-                    self.sell_tiger_kosadqinv(0,leverage)
-                    self.buy_kodex_kosadqinv(0,leverage*hedge_ratio)
+                    self.sell_tiger_kosdaqinv(0,leverage)
+                    self.buy_kodex_kosdaqinv(0,leverage*hedge_ratio)
 
 
                 elif spread_4.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[kodex_kosdaqinv]>=1 :
                     print('long position')
-                    self.sell_kodex_kosadqinv(0,leverage*hedge_ratio)
-                    self.buy_tiger_kosadqinv(0,leverage)                  
+                    self.sell_kodex_koskosdaqinv(0,leverage*hedge_ratio)
+                    self.buy_tiger_koskosdaqinv(0,leverage)                  
             self.time_count += 1
             print('time to trade : ',  time_term - (self.time_count)%time_term)
 
@@ -370,14 +420,14 @@ class Algos(QMainWindow, form_class):
             if abs(spread_4.iloc[-1]) < (threshold.iloc[-1]+5) :
                 print('close position')                    
                 if amount[kodex_kosdaqinv] > init_count :
-                    self.sell_kodex_kosadqinv(0,(amount[kodex_kosdaqinv])-init_count)
-                    self.buy_tiger_kosadqinv(0,(amount[kodex_kosdaqinv])*hedge_ratio-init_count)
+                    self.sell_kodex_koskosdaqinv(0,(amount[kodex_kosdaqinv])-init_count)
+                    self.buy_tiger_koskosdaqinv(0,(amount[kodex_kosdaqinv])*hedge_ratio-init_count)
                 elif amount[kodex_kosdaqinv] < init_count :
-                    self.sell_tiger_kosadqinv(0,init_count-amount[kodex_kosdaqinv])
-                    self.buy_kodex_kosadqinv(0,(init_count-amount[kodex_kosdaqinv])*hedge_ratio)
+                    self.sell_tiger_koskosdaqinv(0,init_count-amount[kodex_kosdaqinv])
+                    self.buy_kodex_koskosdaqinv(0,(init_count-amount[kodex_kosdaqinv])*hedge_ratio)
                         
         else:
             pass
 
 
-        print('------------------------------------------------------------------------------')
+        print('')

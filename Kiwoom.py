@@ -25,11 +25,13 @@ class Kiwoom(QAxWidget):
 
 
 #### 변수 #################################################################
-        self.today = 20210111
+        self.today = 20210112
         self.price = {}
         self.rate = {}
         self.amount = {}
+        self.earning = {}
         self.profit =[]
+        self.cash = None
         self.bid_price = {}  # 매수호가
         self.ask_price = {}  # 매도호가
 ##########################################################################
@@ -73,6 +75,7 @@ class Kiwoom(QAxWidget):
     def get_amount(self):
         # TR 요청
         self.request_opt10074()
+        # self.request_opw00001()
         self.request_opw00004()
 
     def request_opt10074(self):
@@ -82,12 +85,20 @@ class Kiwoom(QAxWidget):
         self.CommRqData("손익요청", "opt10074", 0, "9001")
         self.login_event_loop.exec()
 
+    def request_opw00001(self):
+        self.SetInputValue("계좌번호", self.account)
+        self.SetInputValue("비밀번호", "")
+        self.SetInputValue("비밀번호입력매체구분", "00")
+        self.SetInputValue("조회구분", 2)
+        self.CommRqData("주문가능금액", "opw00001", 0, "9002")
+        self.login_event_loop.exec()
+
     def request_opw00004(self):
         self.SetInputValue("계좌번호", self.account)
         self.SetInputValue("비밀번호", "")
         self.SetInputValue("상장폐지조회구분", 0)
         self.SetInputValue("비밀번호입력매체구분", "00")
-        self.CommRqData("계좌평가현황", "opw00004", 0, "9002")
+        self.CommRqData("계좌평가현황", "opw00004", 0, "9003")
         self.login_event_loop.exec()
 
     def GetRepeatCnt(self, trcode, rqname):
@@ -107,15 +118,25 @@ class Kiwoom(QAxWidget):
             except:
                 pass
 
+        if rqname == "주문가능금액":
+            cash = self.GetCommData(trcode, rqname, 0, "주문가능금액")
+            self.login_event_loop.exit()
+            try:
+                self.cash= int(cash)
+                print('주문가능금액 :',self.cash )
+            except:
+                pass
+
         elif rqname == "계좌평가현황":
             rows = self.GetRepeatCnt(trcode, rqname)
             for i in range(rows):
                 code = self.GetCommData(trcode, rqname, i, "종목명")
                 amount = self.GetCommData(trcode, rqname, i, "보유수량")
-                # buy = self.GetCommData(trcode, rqname, i, "평균단가")
+                earning = self.GetCommData(trcode, rqname, i, "손익금액")
                 self.amount[code] = int(amount)
-                # self.profit[code] = int(buy)                            
-            print(self.amount)
+                self.earning[code] = int(earning)                            
+            print('AMOUNT :',self.amount)
+            print('Earnings :',self.earning)
         self.login_event_loop.exit()
             
 
@@ -140,8 +161,10 @@ class Kiwoom(QAxWidget):
             #     "GetCommRealData(QString,int)", code, 12)
             # self.price[code] = int(temp_price)
             # self.rate[code] = float(temp_rate)
-            self.bid_price[code] = int(temp_bid_price)
-            self.ask_price[code] = int(temp_ask_price)
+            self.bid_price[code] = abs(int(temp_bid_price))
+            self.ask_price[code] = abs(int(temp_ask_price))
+            # print('bid_price :', bid_price)
+            # print('ask_price :', ask_price)
 
     def _handler_chejan_data(self, gubun, item_cnt, fid_list):
         print('[', self.GetChejanData(908), ']', self.GetChejanData(302), ':', self.GetChejanData(905),
