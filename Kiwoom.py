@@ -25,7 +25,7 @@ class Kiwoom(QAxWidget):
 
 
 #### 변수 #################################################################
-        self.today = 20210112
+        self.today = 20210113
         self.price = {}
         self.rate = {}
         self.amount = {}
@@ -75,8 +75,11 @@ class Kiwoom(QAxWidget):
     def get_amount(self):
         # TR 요청
         self.request_opt10074()
+        time.sleep(0.3)
         self.request_opw00018()
+        time.sleep(0.3)
         self.request_opw00004()
+        time.sleep(0.3)
 
     def request_opt10074(self):
         self.SetInputValue("계좌번호", self.account)

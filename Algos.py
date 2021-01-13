@@ -119,7 +119,7 @@ class Algos(QMainWindow, form_class):
 
 ### trading algorithms ###
 ################################################### Algo_0##########################################################
-    def zero(self,amount,bid_price,ask_price,earning):
+    def zero(self,amount,bid_price,ask_price):
             
         ### 알고리즘 요약
         # 1. 가지고 있는 모든 포지션의 손익이 +인 경우 일괄매도        
@@ -129,7 +129,7 @@ class Algos(QMainWindow, form_class):
         kodex_inv = 'KODEX 인버스'   
 
         ### sell if profit is plus ###
-        if self.cash > 1000:
+        if self.kiwoom.cash > 2000:
             self.sell_kodex200(0,amount[kodex200])
             self.sell_kodex_inv(0,amount[kodex_inv])
             time.sleep(5)
@@ -205,35 +205,38 @@ class Algos(QMainWindow, form_class):
         kodex_inv = 'KODEX 인버스'      
         bid_ask_spread = 30
 
+        amount_kodex200 = amount[kodex200]
+        amount_kodex_inv = amount[kodex_inv]
+
         ###스프레드 계산###
         if len(bid_price)!=2:
             pass
         else:               
             print(bid_price['069500'],bid_price['114800'],hedge_ratio)
-            self.spread_1.append(bid_price['069500']-bid_price['114800']*hedge_ratio)             
+            self.spread_1.append(bid_price['069500'] + bid_price['114800']*hedge_ratio)             
             
-            if len(self.spread_1) <= 60:
-                print(len(self.spread_1),'/60')
+            if len(self.spread_1) <= 100:
+                print(len(self.spread_1),'/100')
 
 
         ###이동평균 계산 후 트레이딩 시작###
-        if len(self.spread_1)>=60:
+        if len(self.spread_1)>=100:
  
-            spread_inv = pd.Series(self.spread_1)
+            spread_1 = pd.Series(self.spread_1)
 
-            threshold = spread_1.rolling(window=60,center=False).mean()
+            threshold = spread_1.rolling(window=100,center=False).mean()
 
             print('spread_inv :',round(spread_1.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '/',
-                    round(spread_inv.iloc[-1]-(threshold.iloc[-1]),4))
+                    round(spread_1.iloc[-1]-(threshold.iloc[-1]),4))
 
             if self.time_count % time_term == 0:
-                if spread_inv.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[kodex200] >=1:
+                if spread_1.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount_kodex200 >=1:
                     print('short position')
                     self.sell_kodex200(0,leverage)
                     self.buy_kodex_inv(0,leverage*hedge_ratio)
 
 
-                elif spread_inv.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[kodex_inv]>=1 :
+                elif spread_1.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount_kodex_inv>=1 :
                     print('long position')
                     self.sell_kodex_inv(0,leverage*hedge_ratio)
                     self.buy_kodex200(0,leverage)                  
@@ -241,14 +244,14 @@ class Algos(QMainWindow, form_class):
             print('time to trade : ',  time_term - (self.time_count)%time_term)
 
  
-            if (threshold.iloc[-1]-5)  < spread_inv.iloc[-1] < (threshold.iloc[-1]+5) :
+            if (threshold.iloc[-1]-10) < spread_1.iloc[-1] < (threshold.iloc[-1]+10) :
                 print('close position')                    
-                if amount[kodex200] < init_count :
-                    self.sell_kodex_inv(0,(init_count-amount[kodex200])*hedge_ratio)
-                    self.buy_kodex200(0,init_count-amount[kodex200])
+                if amount_kodex200 < init_count :
+                    self.sell_kodex_inv(0,(init_count-amount_kodex200)*hedge_ratio)
+                    self.buy_kodex200(0,init_count-amount_kodex200)
                 elif amount[kodex200] > init_count :
-                    self.sell_kodex200(0,amount[kodex200]-init_count)
-                    self.buy_kodex_inv(0,(amount[kodex200]-init_count)*hedge_ratio)
+                    self.sell_kodex200(0,amount_kodex200-init_count)
+                    self.buy_kodex_inv(0,(amount_kodex200-init_count)*hedge_ratio)
                         
         else:
             pass
