@@ -28,6 +28,9 @@ class Algos(QMainWindow, form_class):
 ########변수####################     
         # 공통
         self.time_count = 0
+        self.bid_price = {}
+        self.ask_price = {}
+
         # algo_1
         self.spread_1 = []
         # algo_2 
@@ -40,22 +43,54 @@ class Algos(QMainWindow, form_class):
 
 
 ########종목코드 실시간 등록##############
-        codes_one = '069500;114800'
+        self.codes_one = ['069500','114800']
         # codes_three = ';123310'
         # codes_five = '005930;005935'
-        codes = codes_one 
-        self.kiwoom.subscribe_stock_conclusion('2000',codes_one)
+        # codes = codes_one 
+        self.kiwoom.subscribe_stock_conclusion('2000',self.codes_one)
 ############################################
 
 
 ############종목수량, 매수/매도호가 #############
-    def get_data(self):
+    def get_amount(self):
         self.kiwoom.get_amount()
         amount = self.kiwoom.amount 
-        bid_price = self.kiwoom.bid_price
-        ask_price = self.kiwoom.ask_price
-        earning = self.kiwoom.earning
-        return amount , bid_price, ask_price ,earning
+        # bid_price = self.kiwoom.bid_price
+        # ask_price = self.kiwoom.ask_price
+        # earning = self.kiwoom.earning
+        return amount 
+
+    def get_price(self):
+        import win32com.client
+        # 연결 여부 체크
+        objCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
+        bConnect = objCpCybos.IsConnect
+        if (bConnect == 0):
+            print("PLUS가 정상적으로 연결되지 않음. ")
+            exit()
+        # 현재가 객체 구하기
+        objStockMst = win32com.client.Dispatch("DsCbo1.StockMst")
+        # 현재가 정보 조회
+        for code in self.codes_one:
+
+            objStockMst.SetInputValue(0, code)   
+            objStockMst.BlockRequest()
+
+            # 현재가 통신 및 통신 에러 처리 
+            # rqStatus = objStockMst.GetDibStatus()
+            # rqRet = objStockMst.GetDibMsg1()
+            # print("통신상태", rqStatus, rqRet)
+            # if rqStatus != 0:
+            #     exit()
+
+            bid = objStockMst.GetHeaderValue(21)
+            ask = objStockMst.GetHeaderValue(22)
+            print(bid,ask)
+            self.bid_price[code] = int(bid)
+            self.ask_price[code] = int(ask)
+    
+        # return bid_price, ask_price
+    
 #################################################
 
 
@@ -200,7 +235,7 @@ class Algos(QMainWindow, form_class):
 
 
 ################################################### Algo_1##########################################################
-    def one(self,amount,bid_price,ask_price):
+    def one(self):
         print('[algo_one]-----------------------------------------------------------------------------')   
         
         ### 알고리즘 요약
@@ -220,20 +255,15 @@ class Algos(QMainWindow, form_class):
         kodex_inv = 'KODEX 인버스'      
         bid_ask_spread = 25
 
-        amount_kodex200 = amount[kodex200]
-        amount_kodex_inv = amount[kodex_inv]
-
-
         ###스프레드 계산###
-        if len(bid_price)!=2:
+        if len(self.bid_price)!=2:
             pass
         else:               
-            print('bid_price :',bid_price)
-            bid_kodex200 = bid_price['069500']  # 매수가격
-            bid_kodex_inv = bid_price['114800']
-
-            ask_kodex200 = ask_price['069500']    #매도가격
-            ask_kodex_inv = ask_price['114800']
+            print('bid_price :',self.bid_price)
+            bid_kodex200 = self.bid_price['069500']  # 매수가격
+            bid_kodex_inv = self.bid_price['114800']
+            ask_kodex200 = self.ask_price['069500']    #매도가격
+            ask_kodex_inv = self.ask_price['114800']
             self.spread_1.append(bid_kodex200 + bid_kodex_inv*hedge_ratio)             
             
             if len(self.spread_1) <= 100:
@@ -242,30 +272,42 @@ class Algos(QMainWindow, form_class):
 
         ###이동평균 계산 후 트레이딩 시작###
         if len(self.spread_1)>=101:
-
+            del self.spread_1[0]
             spread_1 = pd.Series(self.spread_1)
 
             threshold = spread_1.rolling(window=100,center=False).mean()
 
-            print('spread_inv :',round(spread_1.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '/',
+            print('spread_inv :',round(spread_1.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '   ///',
                     round(spread_1.iloc[-1]-(threshold.iloc[-1]),4))
 
-            if self.time_count % time_term == 0:
-                if spread_1.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount_kodex200 >=1:
+            # if self.time_count % time_term == 0:
+            if spread_1.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread):
+                amount = self.get_amount()
+                amount_kodex200 = amount[kodex200]
+                amount_kodex_inv = amount[kodex_inv]
+
+                if amount_kodex200 >=1:
                     print('short position')
                     self.sell_kodex200(0,leverage)
                     self.buy_kodex_inv(0,leverage*hedge_ratio)
 
+            elif spread_1.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount_kodex_inv>=1 :
+                amount = self.get_amount()
+                amount_kodex200 = amount[kodex200]
+                amount_kodex_inv = amount[kodex_inv]
 
-                elif spread_1.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount_kodex_inv>=1 :
+                if amount_kodex_inv >=1:
                     print('long position')
                     self.sell_kodex_inv(0,leverage*hedge_ratio)
                     self.buy_kodex200(0,leverage)                  
-            self.time_count += 1
-            print('time to trade : ',  time_term - (self.time_count)%time_term)
+            # self.time_count += 1
+            # print('time to trade : ',  time_term - (self.time_count)%time_term)
 
  
             if (threshold.iloc[-1]-5) < spread_1.iloc[-1] < (threshold.iloc[-1]+5) :
+                amount = self.get_amount()
+                amount_kodex200 = amount[kodex200]
+                amount_kodex_inv = amount[kodex_inv]
                 print('close position')                    
                 if amount_kodex200 < init_count :
                     self.sell_kodex_inv(0,(init_count-amount_kodex200)*hedge_ratio)

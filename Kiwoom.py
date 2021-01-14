@@ -25,12 +25,12 @@ class Kiwoom(QAxWidget):
 
 
 #### 변수 #################################################################
-        self.today = 20210114
+        self.today = 20210115
         self.price = {}
         self.rate = {}
-        self.amount = {}
-        self.earning = {}
-        self.profit =[]
+        self.amount = {}     # 보유수량
+        self.earning = {}    # 종목별 평가손익
+        self.profit =[]      # 총실현손익
         self.cash = None
         self.bid_price = {}  # 매수호가
         self.ask_price = {}  # 매도호가
@@ -72,9 +72,12 @@ class Kiwoom(QAxWidget):
 
 #### 예수금, 종목수량 #####################################################
 
-    def get_amount(self):
+    def get_profit(self):
         # TR 요청
         self.request_opt10074()
+
+    def get_amount(self):
+        # TR 요청
         # self.request_opw00018()
         self.request_opw00004()
 
@@ -132,14 +135,13 @@ class Kiwoom(QAxWidget):
             for i in range(rows):
                 code = self.GetCommData(trcode, rqname, i, "종목명")
                 amount = self.GetCommData(trcode, rqname, i, "보유수량")
-                earning = self.GetCommData(trcode, rqname, i, "손익금액")
+                # earning = self.GetCommData(trcode, rqname, i, "손익금액")
                 self.amount[code] = int(amount)
-                self.earning[code] = int(earning)                            
+                # self.earning[code] = int(earning)                            
             print('AMOUNT :',self.amount)
-            print('Earnings :',self.earning)
+            # print('Earnings :',self.earning)
         self.login_event_loop.exit()
             
-
 ##########################################################################
 
 
@@ -147,7 +149,7 @@ class Kiwoom(QAxWidget):
 #### 실시간 ###############################################################
 
     def subscribe_stock_conclusion(self, screen_no, codes):
-        self.SetRealReg(screen_no, codes, "20", 0)
+        self.SetRealReg(screen_no, codes, "20;990", 0)
 
     def _handler_real_data(self, code, realtype, realdata):
         if realtype == '주식체결':
@@ -163,8 +165,16 @@ class Kiwoom(QAxWidget):
             # self.rate[code] = float(temp_rate)
             self.bid_price[code] = abs(int(temp_bid_price))
             self.ask_price[code] = abs(int(temp_ask_price))
-            # print('bid_price :', bid_price)
-            # print('ask_price :', ask_price)
+
+        if realtype == '잔고':
+            code = self.ocx.dynamicCall(
+                "GetCommRealData(QString,int)", '', 302)  
+            amount = self.ocx.dynamicCall(
+                "GetCommRealData(QString,int)", '', 930)  
+
+            self.amount[code]= amount
+            print('real')
+            print(code, amount, self.amount)
 
 
     def _handler_chejan_data(self, gubun, item_cnt, fid_list):
