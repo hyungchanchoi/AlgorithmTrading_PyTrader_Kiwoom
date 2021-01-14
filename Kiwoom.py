@@ -20,12 +20,12 @@ class Kiwoom(QAxWidget):
         self.ocx.OnEventConnect.connect(self._handler_login)
         self.ocx.OnReceiveTrData.connect(self._handler_tr_data)
         self.ocx.OnReceiveRealData.connect(self._handler_real_data)
-        self.ocx.OnReceiveChejanData.connect(self._handler_chejan_data)
+        # self.ocx.OnReceiveChejanData.connect(self._handler_chejan_data)
 ##########################################################################
 
 
 #### 변수 #################################################################
-        self.today = 20210113
+        self.today = 20210114
         self.price = {}
         self.rate = {}
         self.amount = {}
@@ -75,11 +75,8 @@ class Kiwoom(QAxWidget):
     def get_amount(self):
         # TR 요청
         self.request_opt10074()
-        time.sleep(0.3)
-        self.request_opw00018()
-        time.sleep(0.3)
+        # self.request_opw00018()
         self.request_opw00004()
-        time.sleep(0.3)
 
     def request_opt10074(self):
         self.SetInputValue("계좌번호", self.account)
@@ -135,11 +132,11 @@ class Kiwoom(QAxWidget):
             for i in range(rows):
                 code = self.GetCommData(trcode, rqname, i, "종목명")
                 amount = self.GetCommData(trcode, rqname, i, "보유수량")
-                # earning = self.GetCommData(trcode, rqname, i, "손익금액")
+                earning = self.GetCommData(trcode, rqname, i, "손익금액")
                 self.amount[code] = int(amount)
-                # self.earning[code] = int(earning)                            
+                self.earning[code] = int(earning)                            
             print('AMOUNT :',self.amount)
-            # print('Earnings :',self.earning)
+            print('Earnings :',self.earning)
         self.login_event_loop.exit()
             
 
@@ -168,6 +165,7 @@ class Kiwoom(QAxWidget):
             self.ask_price[code] = abs(int(temp_ask_price))
             # print('bid_price :', bid_price)
             # print('ask_price :', ask_price)
+
 
     def _handler_chejan_data(self, gubun, item_cnt, fid_list):
         print('[', self.GetChejanData(908), ']', self.GetChejanData(302), ':', self.GetChejanData(905),

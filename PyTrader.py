@@ -27,16 +27,17 @@ if __name__ == "__main__":
             print('---',now.strftime('%H%M%S'),'---')
 
         #### num,bid,ask of stock ####
-        amount,bid_price,ask_price = algo.get_data()
-
+        amount,bid_price,ask_price,earning = algo.get_data()
+        print(bid_price)
         ### Algorithm ###
-        algo.zero(amount,bid_price,ask_price)
-        algo.one(amount,bid_price,ask_price)
+        # algo.zero(amount,bid_price,ask_price)
+        algo.one_(amount,bid_price,ask_price,earning)
         # algo.two(amount,bid_price,ask_price)
         # algo.three(amount,bid_price,ask_price)
         # algo.four(amount,bid_price,ask_price)
+        # algo.five(amount,bid_price,ask_price)
 
-        time.sleep(1)
+        time.sleep(1.5)
 
     app.exec_() 
 
