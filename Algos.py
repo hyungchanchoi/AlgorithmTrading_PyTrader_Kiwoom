@@ -595,23 +595,21 @@ class Algos(QMainWindow, form_class):
             ask_samsung_wu = self.ask_price[samsung_wu]
             self.spread_4.append(bid_samsung*hedge_ratio_7-bid_samsung_wu*hedge_ratio_8 )             
             
-            if len(self.spread_4) <= 400:
-                print(len(self.spread_4),'/400')
+            if len(self.spread_4) <= 200:
+                print(len(self.spread_4),'/200')
 
 
         ###이동평균 계산 후 트레이딩 시작###
-        if len(self.spread_4)>=400:
+        if len(self.spread_4)>=200:
 
             spread_4 = pd.Series(self.spread_4)
+            threshold = spread_4.rolling(window=200,center=False).mean()
 
-            mean = spread_4.rolling(window=200,center=False).mean()
-            std = spread_4.rolling(window=400,center=False).mean()
-            zscore = (spread_4.iloc[-1] - mean)/std
-
-            print('zscore :',round(zscore,4))
+            print('spread :',round(spread_4.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '   ///',
+                    round(spread_4.iloc[-1]-(threshold.iloc[-1]),4))
 
             # if self.time_count % time_term == 0:
-            if zscore > (1 + (bid_ask_spread-mean)/std):
+            if spread_4.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread):
                 amount = self.get_amount()
                 amount_samsung = amount[samsung]
                 amount_samsung_wu = amount[samsung_wu]
@@ -621,7 +619,7 @@ class Algos(QMainWindow, form_class):
                     self.sell_samsung_wu(ask_samsung_wu,leverage*hedge_ratio_8)
                     self.buy_samsung(bid_samsung,leverage*hedge_ratio_7)
 
-            elif zscore < - (1 + (bid_ask_spread-mean)/std)  :
+            elif spread_4.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread)  :
                 amount = self.get_amount()
                 amount_samsung = amount[samsung]
                 amount_samsung_wu = amount[samsung_wu]
@@ -634,7 +632,7 @@ class Algos(QMainWindow, form_class):
             # print('time to trade : ',  time_term - (self.time_count)%time_term)
  
             # if (threshold.iloc[-1]-5) < spread_1.iloc[-1] < (threshold.iloc[-1]+5) :
-            if abs(zscore) < 1*0.8 :
+            if (threshold.iloc[-1]-100)< spread_4.iloc[-1] < (threshold.iloc[-1]+100) :
                 amount = self.get_amount()
                 amount_samsung = amount[samsung]
                 amount_samsung_wu = amount[samsung_wu]
