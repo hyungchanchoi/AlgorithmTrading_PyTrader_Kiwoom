@@ -149,7 +149,7 @@ class Kiwoom(QAxWidget):
 #### 실시간 ###############################################################
 
     def subscribe_stock_conclusion(self, screen_no, codes):
-        self.SetRealReg(screen_no, codes, "20;990", 0)
+        self.SetRealReg(screen_no, codes, "20", 0)
 
     def _handler_real_data(self, code, realtype, realdata):
         if realtype == '주식체결':
@@ -165,14 +165,14 @@ class Kiwoom(QAxWidget):
             # self.rate[code] = float(temp_rate)
             self.bid_price[code] = abs(int(temp_bid_price))
             self.ask_price[code] = abs(int(temp_ask_price))
-
+            print(self.bid_price, self.ask_price)
         if realtype == '잔고':
             code = self.ocx.dynamicCall(
                 "GetCommRealData(QString,int)", '', 302)  
             amount = self.ocx.dynamicCall(
                 "GetCommRealData(QString,int)", '', 930)  
 
-            self.amount[code]= amount
+            self.amount[code]= amount           
             print('real')
             print(code, amount, self.amount)
 

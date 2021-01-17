@@ -43,11 +43,11 @@ class Algos(QMainWindow, form_class):
 
 
 ########종목코드 실시간 등록##############
-        self.codes_one = ['069500','114800']
+        self.codes_one = ['A005930','A005935']
         # codes_three = ';123310'
         # codes_five = '005930;005935'
-        # codes = codes_one 
-        self.kiwoom.subscribe_stock_conclusion('2000',self.codes_one)
+        codes = '069500;114800'
+        # self.kiwoom.subscribe_stock_conclusion('2000',codes)
 ############################################
 
 
@@ -77,17 +77,18 @@ class Algos(QMainWindow, form_class):
             objStockMst.BlockRequest()
 
             # 현재가 통신 및 통신 에러 처리 
-            # rqStatus = objStockMst.GetDibStatus()
-            # rqRet = objStockMst.GetDibMsg1()
+            rqStatus = objStockMst.GetDibStatus()
+            rqRet = objStockMst.GetDibMsg1()
             # print("통신상태", rqStatus, rqRet)
-            # if rqStatus != 0:
-            #     exit()
+            if rqStatus != 0:
+                exit()
 
-            bid = objStockMst.GetHeaderValue(21)
-            ask = objStockMst.GetHeaderValue(22)
+            name = objStockMst.GetHeaderValue(1)
+            bid = objStockMst.GetHeaderValue(16)
+            ask = objStockMst.GetHeaderValue(17)
             print(bid,ask)
-            self.bid_price[code] = int(bid)
-            self.ask_price[code] = int(ask)
+            self.bid_price[name] = int(bid)
+            self.ask_price[name] = int(ask)
     
         # return bid_price, ask_price
     
@@ -152,16 +153,16 @@ class Algos(QMainWindow, form_class):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 250780, leverage, price, '03', "")
 
     def buy_samsung(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '005930', leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '005930', leverage, price, '00', "")
         
     def sell_samsung(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '005930', leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '005930', leverage, price, '00', "")
 
     def buy_samsung_wu(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '005935', leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '005935', leverage, price, '00', "")
         
     def sell_samsung_wu(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '005935', leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '005935', leverage, price, '00', "")
 ###################################################################################################################
 
 
@@ -260,19 +261,19 @@ class Algos(QMainWindow, form_class):
             pass
         else:               
             print('bid_price :',self.bid_price)
-            bid_kodex200 = self.bid_price['069500']  # 매수가격
-            bid_kodex_inv = self.bid_price['114800']
-            ask_kodex200 = self.ask_price['069500']    #매도가격
-            ask_kodex_inv = self.ask_price['114800']
-            self.spread_1.append(bid_kodex200 + bid_kodex_inv*hedge_ratio)             
+            bid_kodex200 = self.bid_price[kodex200]  # 매수가격
+            bid_kodex_inv = self.bid_price[kodex_inv]
+            ask_kodex200 = self.ask_price[kodex200]    #매도가격
+            ask_kodex_inv = self.ask_price[kodex_inv]
+            self.spread_1.append(bid_kodex200 - bid_kodex_inv*hedge_ratio)             
             
             if len(self.spread_1) <= 100:
                 print(len(self.spread_1),'/100')
 
 
         ###이동평균 계산 후 트레이딩 시작###
-        if len(self.spread_1)>=101:
-            del self.spread_1[0]
+        if len(self.spread_1)>=100:
+
             spread_1 = pd.Series(self.spread_1)
 
             threshold = spread_1.rolling(window=100,center=False).mean()
@@ -291,7 +292,7 @@ class Algos(QMainWindow, form_class):
                     self.sell_kodex200(0,leverage)
                     self.buy_kodex_inv(0,leverage*hedge_ratio)
 
-            elif spread_1.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount_kodex_inv>=1 :
+            elif spread_1.iloc[-1] < (-threshold.iloc[-1]-bid_ask_spread)  :
                 amount = self.get_amount()
                 amount_kodex200 = amount[kodex200]
                 amount_kodex_inv = amount[kodex_inv]
@@ -302,9 +303,9 @@ class Algos(QMainWindow, form_class):
                     self.buy_kodex200(0,leverage)                  
             # self.time_count += 1
             # print('time to trade : ',  time_term - (self.time_count)%time_term)
-
  
-            if (threshold.iloc[-1]-5) < spread_1.iloc[-1] < (threshold.iloc[-1]+5) :
+            # if (threshold.iloc[-1]-5) < spread_1.iloc[-1] < (threshold.iloc[-1]+5) :
+            if abs(spread_1.iloc[-1]) < (threshold.iloc[-1]+5) :
                 amount = self.get_amount()
                 amount_kodex200 = amount[kodex200]
                 amount_kodex_inv = amount[kodex_inv]
@@ -418,7 +419,7 @@ class Algos(QMainWindow, form_class):
                     self.sell_tiger200(0,init_count-amount[kodex200])
                 elif amount[kodex200] > init_count :
                     self.sell_kodex200(0,amount[kodex200]-init_count)
-                    self.buy_tiger200(0,amount[kodex200]-init_count)
+                    self.buy_tiger200(0,amount[samsung]-init_count)
 
 
 ################################################### Algo_3##########################################################
@@ -562,7 +563,7 @@ class Algos(QMainWindow, form_class):
 
 ################################################### Algo_5########################################################## 
 
-    def five(self,amount,bid_price,ask_price):
+    def five(self):
         print('[algo_five]--------------------------------------------------------------------')   
         
         ### 알고리즘 요약
@@ -573,60 +574,78 @@ class Algos(QMainWindow, form_class):
         # 4. 반대 포지션으로 청산
         
         ###초기 설정###
-        leverage = 5
-        init_count = 10
+        leverage = 1
+        init_count = 15
         time_term = 1
-        hedge_ratio = 1
+        hedge_ratio_7 = 1
+        hedge_ratio_8 = 1
 
         samsung = '삼성전자' 
         samsung_wu = '삼성전자우'
-        bid_ask_spread = 300
+        bid_ask_spread = 400
 
         ###스프레드 계산###
-        if '005930' in bid_price.keys() and '005935' in bid_price.keys() :      
-            print(bid_price)
-            self.spread_4.append(bid_price['005930']-bid_price['005935']*hedge_ratio)             
+        if len(self.bid_price)!=2:
+            pass
+        else:               
+            print('bid_price :',self.bid_price)
+            bid_samsung = self.bid_price[samsung]  # 매수가격
+            bid_samsung_wu = self.bid_price[samsung_wu]
+            ask_samsung = self.ask_price[samsung]    #매도가격
+            ask_samsung_wu = self.ask_price[samsung_wu]
+            self.spread_4.append(bid_samsung*hedge_ratio_7-bid_samsung_wu*hedge_ratio_8 )             
             
-            if len(self.spread_4) <= 100:
-                print(len(self.spread_4),'/100')
+            if len(self.spread_4) <= 200:
+                print(len(self.spread_4),'/200')
 
 
         ###이동평균 계산 후 트레이딩 시작###
-        if len(self.spread_4)>=100:
- 
+        if len(self.spread_4)>=200:
+
             spread_4 = pd.Series(self.spread_4)
 
-            threshold = spread_4.rolling(window=60,center=False).mean()
+            threshold = spread_4.rolling(window=200,center=False).mean()
 
-            print('spread_4 :',round(spread_4.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '/',
+            print('spread_inv :',round(spread_4.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '   ///',
                     round(spread_4.iloc[-1]-(threshold.iloc[-1]),4))
 
-            if self.time_count % time_term == 0:
-                if spread_4.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread) and amount[samsung] >=1:
+            # if self.time_count % time_term == 0:
+            if spread_4.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread):
+                amount = self.get_amount()
+                amount_samsung = amount[samsung]
+                amount_samsung_wu = amount[samsung_wu]
+
+                if amount_samsung_wu >=8:
                     print('short position')
-                    self.sell_samsung(0,leverage)
-                    self.buy_samsung_wu(0,leverage*hedge_ratio)
+                    self.sell_samsung_wu(ask_samsung_wu,leverage*hedge_ratio_8)
+                    self.buy_samsung(bid_samsung,leverage*hedge_ratio_7)
 
+            elif spread_4.iloc[-1] < -(threshold.iloc[-1]+bid_ask_spread)  :
+                amount = self.get_amount()
+                amount_samsung = amount[samsung]
+                amount_samsung_wu = amount[samsung_wu]
 
-                elif spread_4.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread) and amount[samsung_wu]>=1 :
+                if amount_samsung >=7:
                     print('long position')
-                    self.sell_samsung_wu(0,leverage*hedge_ratio)
-                    self.buy_samsung(0,leverage)                  
-            self.time_count += 1
-            print('time to trade : ',  time_term - (self.time_count)%time_term)
-
+                    self.sell_samsung(ask_samsung,leverage*hedge_ratio_7)
+                    self.buy_samsung_wu(bid_samsung_wu,leverage*hedge_ratio_8)                  
+            # self.time_count += 1
+            # print('time to trade : ',  time_term - (self.time_count)%time_term)
  
+            # if (threshold.iloc[-1]-5) < spread_1.iloc[-1] < (threshold.iloc[-1]+5) :
             if abs(spread_4.iloc[-1]) < (threshold.iloc[-1]) :
+                amount = self.get_amount()
+                amount_samsung = amount[samsung]
+                amount_samsung_wu = amount[samsung_wu]
                 print('close position')                    
-                if amount[samsung] > init_count :
-                    self.sell_samsung(0,(amount[samsung])-init_count)
-                    self.buy_samsung_wu(0,(amount[samsung])*hedge_ratio-init_count)
-                elif amount[samsung] < init_count :
-                    self.sell_samsung_wu(0,init_count-amount[samsung])
-                    self.buy_samsung(0,(init_count-amount[samsung])*hedge_ratio)
+                if amount_samsung < init_count :
+                    self.sell_samsung_wu(ask_samsung_wu,(init_count-amount_samsung))
+                    self.buy_samsung(bid_samsung,(init_count-amount_samsung))
+                elif amount[samsung] > init_count :
+                    self.sell_samsung(ask_samsung,(amount_samsung-init_count))
+                    self.buy_samsung_wu(bid_samsung_wu,(amount_samsung-init_count))
                         
         else:
             pass
-
 
         print('')

@@ -20,32 +20,31 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     algo = Algos()
 
-    start = input('Did you check the initial condition of Algorithm? (yes or no) :')
+    # start = input('Did you check the initial condition of Algorithm? (yes or no) :')
     print('------------------------------- start trading ------------------------------------')    
-    while start == 'yes' :
+    while True :
         
-        #### current time ####
-        # now = datetime.now()
-        # if int(now.strftime('%H%M%S')) > 155000:
-        #     break
-        # else:
-        #     print('---',now.strftime('%H%M%S'),'---')
+        ### current time ####
+        now = datetime.now()
+        if int(now.strftime('%H%M%S')) > 155000:
+            break
+        else:
+            print('---',now.strftime('%H%M%S'),'---')
 
         #### num,bid,ask of stock ####
-        # amount = algo.get_amount()
+        algo.kiwoom.get_profit()
         algo.get_price()
-
-        # print(bid_price)
+        # amount = algo.get_amount()
 
         ### Algorithm ###
         # algo.zero(amount,bid_price,ask_price)
-        algo.one()
+        # algo.one()
         # algo.two(amount,bid_price,ask_price)
-        # algo.three(amount,bid_price,ask_price)
+        # algo.three(amount,bid_price,ask_price)    
         # algo.four(amount,bid_price,ask_price)
-        # algo.five(amount,bid_price,ask_price)
+        algo.five()
 
-        # time.sleep(0.1)
+        time.sleep(1.5)
 
     app.exec_() 
 
