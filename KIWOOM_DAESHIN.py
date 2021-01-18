@@ -31,10 +31,12 @@ if __name__ == "__main__":
         else:
             print('---',now.strftime('%H%M%S'),'---')
 
+
         #### num,bid,ask of stock ####
         algo.kiwoom.get_profit()
-        algo.get_price()
-        # amount = algo.get_amount()
+        amount = algo.kiwoom.get_amount()
+        bid_price, ask_price = algo.get_data()
+
 
         ### Algorithm ###
         # algo.zero(amount,bid_price,ask_price)
@@ -42,9 +44,11 @@ if __name__ == "__main__":
         # algo.two(amount,bid_price,ask_price)
         # algo.three(amount,bid_price,ask_price)    
         # algo.four(amount,bid_price,ask_price)
-        algo.five()
+        # algo.five()
+        algo.six(amount,bid_price,ask_price)
 
         time.sleep(1.5)
+
 
     app.exec_() 
 

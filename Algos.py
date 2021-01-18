@@ -46,19 +46,18 @@ class Algos(QMainWindow, form_class):
         self.codes_one = ['A005930','A005935']
         # codes_three = ';123310'
         # codes_five = '005930;005935'
-        codes = '069500;114800'
-        # self.kiwoom.subscribe_stock_conclusion('2000',codes)
+        codes_six = '069500;114800;364690;365040'
+        self.kiwoom.subscribe_stock_conclusion('2000',codes_six)
 ############################################
 
 
 ############종목수량, 매수/매도호가 #############
-    def get_amount(self):
+    def get_data(self):
         self.kiwoom.get_amount()
-        amount = self.kiwoom.amount 
-        # bid_price = self.kiwoom.bid_price
-        # ask_price = self.kiwoom.ask_price
+        bid_price = self.kiwoom.bid_price
+        ask_price = self.kiwoom.ask_price
         # earning = self.kiwoom.earning
-        return amount 
+        return bid_price, ask_price
 
     def get_price(self):
         import win32com.client
@@ -90,8 +89,7 @@ class Algos(QMainWindow, form_class):
             self.bid_price[name] = int(bid)
             self.ask_price[name] = int(ask)
     
-        # return bid_price, ask_price
-    
+        # return bid_price, ask_price    
 #################################################
 
 
@@ -187,54 +185,6 @@ class Algos(QMainWindow, form_class):
             self.buy_kodex_inv(0,amount[kodex_inv])
 
 
-################################################### Algo_0.5##########################################################
-    def zero_5(self,amount,bid_price,ask_price,earning):
-        print('[algo_zero_5]---------------------------------------------------------------------')   
-        
-        ### 알고리즘 요약
-        # 1. 가지고 있는 모든 포지션의 손익이 +인 경우 일괄매도        
-
-        ###초기 설정###
-        kodex200 = 'KODEX 200'
-        tiger200 = 'TIGER 200'
-        kodex_inv = 'KODEX 인버스'  
-        tiger_inv = 'TIGER 인버스'    
-
-
-        ### MAKE BASKET###
-        try:
-            if len(self.kiwoom.amount) == 0:
-                
-                cash = 2500000
-                
-                amount_kodex200 = int(cash/2/ bid_price['069500'])   
-                # amount_tiger200 = cash/4/ bid_price['102110']   
-                amount_kodexinv = int(cash/2/ bid_price['114800'])   
-                # amount_tigerinv = cash/4/ bid_price['123310']               
-
-                self.buy_kodex200(0,amount_kodex200)
-                self.buy_kodex_inv(0,amount_kodexinv)
-                # self.buy_tiger200(0,amount_tiger200)
-                # self.buy_tiger_inv(0,amount_tigerinv)
-            else:               
-                pass
-            
-
-            ### sell if profit is plus ###
-            if earning['069500'] + earning['114800'] > (amount_kodex200 + amount_kodexinv) * 5:
-                self.sell_kodex200(0,amount[kodex200])
-                self.sell_kodex_inv(0,amount[kodex_inv])
-            
-            # if earning['102110'] + earning['123310'] > (amount_tiger200 + amount_tigerinv) * 5:
-            #     self.sell_tiger200(0,amount[tiger200])
-            #     self.sell_tiger_inv(0,amount[tiger_inv])
-
-        except:
-            pass
-
-        print('------------------------------------------------------------------------------')
-
-
 ################################################### Algo_1##########################################################
     def one(self):
         print('[algo_one]-----------------------------------------------------------------------------')   
@@ -319,46 +269,6 @@ class Algos(QMainWindow, form_class):
                         
         else:
             pass
-
-
-        print('------------------------------------------------------------------------------')
-
-
-################################################### Algo_1_##########################################################
-    def one_(self,amount,bid_price,ask_price,earning):
-        print('[algo_one]-----------------------------------------------------------------------------')   
-        
-        ### 알고리즘 요약
-        # 1. kodex200과 kodex_inv의 매수호가(매도가격) 스프레드가 지난 60개의 데이터 이동평균과 달라지는 경우,
-        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
-        # 3. 숏 또는 롱 포지션 취한 후, 
-        # 4. 반대 포지션으로 청산
-        
-        ###초기 설정###
-        leverage = 1       
-        hedge_ratio = 11
-
-        kodex200 = 'KODEX 200'
-        kodex_inv = 'KODEX 인버스'      
-
-        amount_kodex200 = amount[kodex200]
-        amount_kodex_inv = amount[kodex_inv]
-
-        earning_kodex200 = earning[kodex200]
-        earning_kodex_inv = earning[kodex_inv]
-
-        print('bid_price :',bid_price)
-    ###이동평균 계산 후 트레이딩 시작###
-        if earning_kodex200 > 1000 :
-            self.sell_kodex200(0,23)
-            time.sleep(2)
-            self.buy_kodex200(0,23)
-
-        if earning_kodex_inv > 1000 :
-            self.sell_kodex_inv(0,259)
-            time.sleep(2)
-            self.buy_kodex_inv(0,259)
-
 
 
         print('------------------------------------------------------------------------------')
@@ -646,5 +556,63 @@ class Algos(QMainWindow, form_class):
                         
         else:
             pass
+
+        print('')
+
+
+################################################### Algo_6########################################################## 
+
+    def six(self,amount, bid_price, ask_price):
+        print('[algo_six]--------------------------------------------------------------------')   
+        
+        ### 알고리즘 요약
+        # 1. 삼성전자와 삼성전자우의 매수호가(매수가격) 스프레드가 
+        #    지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
+        
+        ###초기 설정###
+        leverage = 1
+        init_count = 15
+
+        kodex_active = 'KODEX 혁신기술테마액티브' 
+        tiger_active = 'TIGER AI코리아그로스액티브'
+
+        amount_kodex_active = amount[kodex_active]
+        amount_tiger_active = amount[tiger_active]
+
+        ### get bid ask###
+        if len(bid_price)!=4:
+            pass
+        else:               
+            print('bid_price :',bid_price)
+            print('ask_price :',ask_price)
+            bid_kodex_active = bid_price['364690']  # 매수가격
+            bid_tiger_active = bid_price['365040']
+            ask_kodex_active = ask_price['364690']  # 매도가격
+            ask_tiger_active = ask_price['365040']
+
+
+        if ask_kodex_active > bid_tiger_active:  
+            print('short position')   
+            self.sell_kodex(ask_kodex_active,leverage)
+            self.buy_tiger(bid_tiger_active,leverage)
+
+        elif ask_tiger_active > bid_kodex_active :
+            print('long position')   
+            self.sell_tiger(ask_tiger_active,leverage)
+            self.buy_kodex(bid_kodex_active,leverage)                  
+
+
+        if amount_kodex_active > amount_tiger_active and  ask_kodex_active == bid_tiger_active:
+            print('close position')                    
+            self.sell_kodex_active(ask_kodex_active,(amount_kodex_active-init_count))
+            self.buy_samsung(bid_tiger_active,(amount_kodex_active-init_count))
+        elif amount_tiger_active > amount_kodex_active and  bid_kodex_active == ask_tiger_active :
+            print('close position')
+            self.sell_samsung(bid_kodex_active,(amount_tiger_active-init_count))
+            self.buy_samsung_wu(ask_tiger_active,(amount_tiger_active-init_count))
+                    
 
         print('')
