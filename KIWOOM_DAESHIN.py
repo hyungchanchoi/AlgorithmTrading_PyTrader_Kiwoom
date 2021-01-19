@@ -44,7 +44,7 @@ if __name__ == "__main__":
         # algo.two(amount,bid_price,ask_price)
         # algo.three(amount,bid_price,ask_price)    
         # algo.four(amount,bid_price,ask_price)
-        # algo.five()
+        algo.five(amount, bid_price, ask_price)
         algo.six(amount,bid_price,ask_price)
 
         time.sleep(1.5)

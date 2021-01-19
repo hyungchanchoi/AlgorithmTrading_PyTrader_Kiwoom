@@ -45,9 +45,10 @@ class Algos(QMainWindow, form_class):
 ########종목코드 실시간 등록##############
         self.codes_one = ['A005930','A005935']
         # codes_three = ';123310'
-        # codes_five = '005930;005935'
-        codes_six = '069500;114800;364690;365040'
-        self.kiwoom.subscribe_stock_conclusion('2000',codes_six)
+        code_five = '005930;005935'
+        code_six = '069500;114800;364690;365040'
+        codes = code_five + ';' + code_six
+        self.kiwoom.subscribe_stock_conclusion('2000',codes)
 ############################################
 
 
@@ -473,7 +474,7 @@ class Algos(QMainWindow, form_class):
 
 ################################################### Algo_5########################################################## 
 
-    def five(self):
+    def five(self,amount, bid_price, ask_price):
         print('[algo_five]--------------------------------------------------------------------')   
         
         ### 알고리즘 요약
@@ -485,7 +486,7 @@ class Algos(QMainWindow, form_class):
         
         ###초기 설정###
         leverage = 1
-        init_count = 15
+        init_count = 10
         time_term = 1
         hedge_ratio_7 = 1
         hedge_ratio_8 = 1
@@ -493,16 +494,19 @@ class Algos(QMainWindow, form_class):
         samsung = '삼성전자' 
         samsung_wu = '삼성전자우'
         bid_ask_spread = 400
+ 
+        amount_samsung = amount[samsung]
+        amount_samsung_wu = amount[samsung_wu]
 
         ###스프레드 계산###
-        if len(self.bid_price)!=2:
+        if '005935' in bid_price.keys() and '005930' in bid_price.keys():
             pass
         else:               
-            print('bid_price :',self.bid_price)
-            bid_samsung = self.bid_price[samsung]  # 매수가격
-            bid_samsung_wu = self.bid_price[samsung_wu]
-            ask_samsung = self.ask_price[samsung]    #매도가격
-            ask_samsung_wu = self.ask_price[samsung_wu]
+
+            bid_samsung = bid_price['005930']  # 매수가격
+            bid_samsung_wu = bid_price['005935']
+            ask_samsung = ask_price['005930']    #매도가격
+            ask_samsung_wu = ask_price['005935']
             self.spread_4.append(bid_samsung*hedge_ratio_7-bid_samsung_wu*hedge_ratio_8 )             
             
             if len(self.spread_4) <= 200:
@@ -520,9 +524,6 @@ class Algos(QMainWindow, form_class):
 
             # if self.time_count % time_term == 0:
             if spread_4.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread):
-                amount = self.get_amount()
-                amount_samsung = amount[samsung]
-                amount_samsung_wu = amount[samsung_wu]
 
                 if amount_samsung_wu >=8:
                     print('short position')
@@ -530,9 +531,6 @@ class Algos(QMainWindow, form_class):
                     self.buy_samsung(bid_samsung,leverage*hedge_ratio_7)
 
             elif spread_4.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread)  :
-                amount = self.get_amount()
-                amount_samsung = amount[samsung]
-                amount_samsung_wu = amount[samsung_wu]
 
                 if amount_samsung >=7:
                     print('long position')
@@ -543,9 +541,6 @@ class Algos(QMainWindow, form_class):
  
             # if (threshold.iloc[-1]-5) < spread_1.iloc[-1] < (threshold.iloc[-1]+5) :
             if (threshold.iloc[-1]-100)< spread_4.iloc[-1] < (threshold.iloc[-1]+100) :
-                amount = self.get_amount()
-                amount_samsung = amount[samsung]
-                amount_samsung_wu = amount[samsung_wu]
                 print('close position')                    
                 if amount_samsung < init_count :
                     self.sell_samsung_wu(ask_samsung_wu,(init_count-amount_samsung))
@@ -583,11 +578,9 @@ class Algos(QMainWindow, form_class):
         amount_tiger_active = amount[tiger_active]
 
         ### get bid ask###
-        if len(bid_price)!=4:
+        if '364690' in bid_price.keys() and '365040' in bid_price.keys():
             pass
         else:               
-            print('bid_price :',bid_price)
-            print('ask_price :',ask_price)
             bid_kodex_active = bid_price['364690']  # 매수가격
             bid_tiger_active = bid_price['365040']
             ask_kodex_active = ask_price['364690']  # 매도가격
@@ -607,12 +600,12 @@ class Algos(QMainWindow, form_class):
 
         if amount_kodex_active > amount_tiger_active and  ask_kodex_active == bid_tiger_active:
             print('close position')                    
-            self.sell_kodex_active(ask_kodex_active,(amount_kodex_active-init_count))
-            self.buy_samsung(bid_tiger_active,(amount_kodex_active-init_count))
+            self.sell_kodex(ask_kodex_active,(amount_kodex_active-init_count))
+            self.buy_tiger(bid_tiger_active,(amount_kodex_active-init_count))
         elif amount_tiger_active > amount_kodex_active and  bid_kodex_active == ask_tiger_active :
             print('close position')
-            self.sell_samsung(bid_kodex_active,(amount_tiger_active-init_count))
-            self.buy_samsung_wu(ask_tiger_active,(amount_tiger_active-init_count))
+            self.sell_tiger(bid_kodex_active,(amount_tiger_active-init_count))
+            self.buy_kodex(ask_tiger_active,(amount_tiger_active-init_count))
                     
 
         print('')

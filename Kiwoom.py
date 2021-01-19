@@ -165,7 +165,9 @@ class Kiwoom(QAxWidget):
             # self.rate[code] = float(temp_rate)
             self.bid_price[code] = abs(int(temp_bid_price))
             self.ask_price[code] = abs(int(temp_ask_price))
-            print(self.bid_price, self.ask_price)
+            print('bid_price',self.bid_price)
+            print('ask_price',self.ask_price)
+            
         if realtype == '잔고':
             code = self.ocx.dynamicCall(
                 "GetCommRealData(QString,int)", '', 302)  
