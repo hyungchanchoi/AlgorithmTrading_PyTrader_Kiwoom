@@ -132,6 +132,7 @@ class Kiwoom(QAxWidget):
 
         elif rqname == "계좌평가현황":
             rows = self.GetRepeatCnt(trcode, rqname)
+            self.amount = {}
             for i in range(rows):
                 code = self.GetCommData(trcode, rqname, i, "종목명")
                 amount = self.GetCommData(trcode, rqname, i, "보유수량")

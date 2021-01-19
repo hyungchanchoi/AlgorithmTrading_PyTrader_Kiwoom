@@ -574,7 +574,7 @@ class Algos(QMainWindow, form_class):
             amount_kodex_active = amount[kodex_active]
         else:
             amount_kodex_active = 0
-            
+
         if tiger_active in amount.keys():
             amount_tiger_active = amount[tiger_active]
         else:
@@ -606,8 +606,8 @@ class Algos(QMainWindow, form_class):
                 self.buy_tiger(bid_tiger_active,(amount_kodex_active-init_count))
             elif amount_tiger_active > init_count and  bid_kodex_active == ask_tiger_active :
                 print('close position')
-                self.sell_tiger(bid_kodex_active,(amount_tiger_active-init_count))
-                self.buy_kodex(ask_tiger_active,(amount_tiger_active-init_count))
+                self.sell_tiger(ask_tiger_active,(amount_tiger_active-init_count))
+                self.buy_kodex(bid_kodex_active,(amount_tiger_active-init_count))
                     
 
         print('')
