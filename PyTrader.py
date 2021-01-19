@@ -21,23 +21,30 @@ if __name__ == "__main__":
         
         #### current time ####
         now = datetime.now()
-        if int(now.strftime('%H%M%S')) > 155000:
+        if int(now.strftime('%H%M%S')) > 152000:
             break
         else:
             print('---',now.strftime('%H%M%S'),'---')
 
+
         #### num,bid,ask of stock ####
-        amount,bid_price,ask_price,earning = algo.get_data()
-        print(bid_price)
+        # algo.kiwoom.get_profit()
+        amount,bid_price, ask_price = algo.get_data()
+
+        print('bid_price',bid_price)
+        print('ask_price',ask_price)
+
+
         ### Algorithm ###
         # algo.zero(amount,bid_price,ask_price)
-        algo.one_(amount,bid_price,ask_price,earning)
+        # algo.one()
         # algo.two(amount,bid_price,ask_price)
-        # algo.three(amount,bid_price,ask_price)
+        # algo.three(amount,bid_price,ask_price)    
         # algo.four(amount,bid_price,ask_price)
-        # algo.five(amount,bid_price,ask_price)
+        algo.five(amount, bid_price, ask_price)
+        algo.six(amount,bid_price,ask_price)
 
-        time.sleep(1.5)
+        time.sleep(2)
 
     app.exec_() 
 
