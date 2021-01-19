@@ -14,13 +14,13 @@ from datetime import datetime,timedelta
 if __name__ == "__main__":
 
     # 대신증권 연결 확인
-    instCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
-    print(instCpCybos.IsConnect)
+    # instCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
+    # print(instCpCybos.IsConnect)
 
     app = QApplication(sys.argv)
     algo = Algos()
 
-    # start = input('Did you check the initial condition of Algorithm? (yes or no) :')
+    start = input('Did you check the initial condition of Algorithm? (yes or no) :')
     print('------------------------------- start trading ------------------------------------')    
     while True :
         
@@ -33,9 +33,11 @@ if __name__ == "__main__":
 
 
         #### num,bid,ask of stock ####
-        algo.kiwoom.get_profit()
-        amount = algo.kiwoom.get_amount()
-        bid_price, ask_price = algo.get_data()
+        # algo.kiwoom.get_profit()
+        amount,bid_price, ask_price = algo.get_data()
+
+        print('bid_price',bid_price)
+        print('ask_price',ask_price)
 
 
         ### Algorithm ###
@@ -47,7 +49,7 @@ if __name__ == "__main__":
         algo.five(amount, bid_price, ask_price)
         algo.six(amount,bid_price,ask_price)
 
-        time.sleep(1.5)
+        time.sleep(2)
 
 
     app.exec_() 

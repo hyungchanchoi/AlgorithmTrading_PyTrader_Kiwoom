@@ -154,9 +154,9 @@ class Kiwoom(QAxWidget):
     def _handler_real_data(self, code, realtype, realdata):
         if realtype == '주식체결':
             temp_ask_price = self.ocx.dynamicCall(
-                "GetCommRealData(QString,int)", code, 27)  # 매도호가
+                "GetCommRealData(QString,int)", code, 28)  # 매도가격
             temp_bid_price = self.ocx.dynamicCall(
-                "GetCommRealData(QString,int)", code, 28)  # 매수호가
+                "GetCommRealData(QString,int)", code, 27)  # 매수가격
             # temp_price = self.ocx.dynamicCall(
             #     "GetCommRealData(QString,int)", code, 10)
             # temp_rate = self.ocx.dynamicCall(
@@ -165,8 +165,6 @@ class Kiwoom(QAxWidget):
             # self.rate[code] = float(temp_rate)
             self.bid_price[code] = abs(int(temp_bid_price))
             self.ask_price[code] = abs(int(temp_ask_price))
-            print('bid_price',self.bid_price)
-            print('ask_price',self.ask_price)
             
         if realtype == '잔고':
             code = self.ocx.dynamicCall(

@@ -58,7 +58,7 @@ class Algos(QMainWindow, form_class):
         bid_price = self.kiwoom.bid_price
         ask_price = self.kiwoom.ask_price
         # earning = self.kiwoom.earning
-        return bid_price, ask_price
+        return self.kiwoom.amount,bid_price, ask_price
 
     def get_price(self):
         import win32com.client
@@ -104,16 +104,16 @@ class Algos(QMainWindow, form_class):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, code, leverage, price, '00', "")   
 
     def buy_kodex(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 364690, leverage, price, '03', "")   
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 364690, leverage, price, '00', "")   
         
     def sell_kodex(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 364690, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 364690, leverage, price, '00', "")
         
     def buy_tiger(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 365040, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 365040, leverage, price, '00', "")
         
     def sell_tiger(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 365040, leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 365040, leverage, price, '00', "")
         
     def buy_kodex200(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '069500', leverage, price, '03', "")
@@ -487,7 +487,6 @@ class Algos(QMainWindow, form_class):
         ###초기 설정###
         leverage = 1
         init_count = 10
-        time_term = 1
         hedge_ratio_7 = 1
         hedge_ratio_8 = 1
 
@@ -500,24 +499,21 @@ class Algos(QMainWindow, form_class):
 
         ###스프레드 계산###
         if '005935' in bid_price.keys() and '005930' in bid_price.keys():
-            pass
-        else:               
-
             bid_samsung = bid_price['005930']  # 매수가격
             bid_samsung_wu = bid_price['005935']
             ask_samsung = ask_price['005930']    #매도가격
             ask_samsung_wu = ask_price['005935']
             self.spread_4.append(bid_samsung*hedge_ratio_7-bid_samsung_wu*hedge_ratio_8 )             
             
-            if len(self.spread_4) <= 200:
-                print(len(self.spread_4),'/200')
+            if len(self.spread_4) <= 150:
+                print(len(self.spread_4),'/150')
 
 
         ###이동평균 계산 후 트레이딩 시작###
-        if len(self.spread_4)>=200:
+        if len(self.spread_4)>=150:
 
             spread_4 = pd.Series(self.spread_4)
-            threshold = spread_4.rolling(window=200,center=False).mean()
+            threshold = spread_4.rolling(window=150,center=False).mean()
 
             print('spread :',round(spread_4.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '   ///',
                     round(spread_4.iloc[-1]-(threshold.iloc[-1]),4))
@@ -525,14 +521,14 @@ class Algos(QMainWindow, form_class):
             # if self.time_count % time_term == 0:
             if spread_4.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread):
 
-                if amount_samsung_wu >=8:
+                if amount_samsung_wu >=1:
                     print('short position')
                     self.sell_samsung_wu(ask_samsung_wu,leverage*hedge_ratio_8)
                     self.buy_samsung(bid_samsung,leverage*hedge_ratio_7)
 
             elif spread_4.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread)  :
 
-                if amount_samsung >=7:
+                if amount_samsung >=1:
                     print('long position')
                     self.sell_samsung(ask_samsung,leverage*hedge_ratio_7)
                     self.buy_samsung_wu(bid_samsung_wu,leverage*hedge_ratio_8)                  
@@ -569,43 +565,49 @@ class Algos(QMainWindow, form_class):
         
         ###초기 설정###
         leverage = 1
-        init_count = 15
+        init_count = 30
 
         kodex_active = 'KODEX 혁신기술테마액티브' 
         tiger_active = 'TIGER AI코리아그로스액티브'
 
-        amount_kodex_active = amount[kodex_active]
-        amount_tiger_active = amount[tiger_active]
+        if kodex_active in amount.keys():
+            amount_kodex_active = amount[kodex_active]
+        else:
+            amount_kodex_active = 0
+            
+        if tiger_active in amount.keys():
+            amount_tiger_active = amount[tiger_active]
+        else:
+            amount_tiger_active = 0
+
 
         ### get bid ask###
-        if '364690' in bid_price.keys() and '365040' in bid_price.keys():
-            pass
-        else:               
+        if '364690' in bid_price.keys() and '365040' in bid_price.keys():            
             bid_kodex_active = bid_price['364690']  # 매수가격
             bid_tiger_active = bid_price['365040']
             ask_kodex_active = ask_price['364690']  # 매도가격
             ask_tiger_active = ask_price['365040']
 
 
-        if ask_kodex_active > bid_tiger_active:  
-            print('short position')   
-            self.sell_kodex(ask_kodex_active,leverage)
-            self.buy_tiger(bid_tiger_active,leverage)
+            if ask_kodex_active > bid_tiger_active and amount_tiger_active<=59:  
+                print('short position')   
+                self.sell_kodex(ask_kodex_active,leverage)
+                self.buy_tiger(bid_tiger_active,leverage)
 
-        elif ask_tiger_active > bid_kodex_active :
-            print('long position')   
-            self.sell_tiger(ask_tiger_active,leverage)
-            self.buy_kodex(bid_kodex_active,leverage)                  
+            elif ask_tiger_active > bid_kodex_active and amount_tiger_active<=59 :
+                print('long position')   
+                self.sell_tiger(ask_tiger_active,leverage)
+                self.buy_kodex(bid_kodex_active,leverage)                  
 
 
-        if amount_kodex_active > amount_tiger_active and  ask_kodex_active == bid_tiger_active:
-            print('close position')                    
-            self.sell_kodex(ask_kodex_active,(amount_kodex_active-init_count))
-            self.buy_tiger(bid_tiger_active,(amount_kodex_active-init_count))
-        elif amount_tiger_active > amount_kodex_active and  bid_kodex_active == ask_tiger_active :
-            print('close position')
-            self.sell_tiger(bid_kodex_active,(amount_tiger_active-init_count))
-            self.buy_kodex(ask_tiger_active,(amount_tiger_active-init_count))
+            if amount_kodex_active > init_count and  ask_kodex_active == bid_tiger_active:
+                print('close position')                    
+                self.sell_kodex(ask_kodex_active,(amount_kodex_active-init_count))
+                self.buy_tiger(bid_tiger_active,(amount_kodex_active-init_count))
+            elif amount_tiger_active > init_count and  bid_kodex_active == ask_tiger_active :
+                print('close position')
+                self.sell_tiger(bid_kodex_active,(amount_tiger_active-init_count))
+                self.buy_kodex(ask_tiger_active,(amount_tiger_active-init_count))
                     
 
         print('')
