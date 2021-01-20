@@ -132,13 +132,15 @@ class Kiwoom(QAxWidget):
 
         elif rqname == "계좌평가현황":
             rows = self.GetRepeatCnt(trcode, rqname)
+            
             self.amount = {}
             for i in range(rows):
                 code = self.GetCommData(trcode, rqname, i, "종목명")
                 amount = self.GetCommData(trcode, rqname, i, "보유수량")
                 # earning = self.GetCommData(trcode, rqname, i, "손익금액")
                 self.amount[code] = int(amount)
-                # self.earning[code] = int(earning)                            
+                # self.earning[code] = int(earning)
+                time.sleep(0.5)                            
             print('AMOUNT :',self.amount)
             # print('Earnings :',self.earning)
         self.login_event_loop.exit()

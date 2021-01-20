@@ -115,16 +115,16 @@ class Algos(QMainWindow, form_class):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, 365040, leverage, price, '00', "")
         
     def buy_kodex200(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '069500', leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '069500', leverage, price, '00', "")
         
     def sell_kodex200(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '069500', leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '069500', leverage, price, '00', "")
 
     def buy_tiger200(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '102110', leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '102110', leverage, price, '00', "")
         
     def sell_tiger200(self,price,leverage):
-        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '102110', leverage, price, '03', "")
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '102110', leverage, price, '00', "")
         
     def buy_kodex_inv(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, 114800, leverage, price, '03', "")
@@ -393,7 +393,6 @@ class Algos(QMainWindow, form_class):
                 self.buy_tigerinv(bid_tiger_inv,(amount_kodex_inv-init_count))
 
 
-
 ################################################### Algo_4########################################################## 
 
     def four(self,amount,bid_price,ask_price):
@@ -481,67 +480,51 @@ class Algos(QMainWindow, form_class):
         ###초기 설정###
         leverage = 1
         init_count = 5
-        hedge_ratio_7 = 1
-        hedge_ratio_8 = 1
 
         samsung = '삼성전자' 
         samsung_wu = '삼성전자우'
-        bid_ask_spread = 400
- 
-        amount_samsung = amount[samsung]
-        amount_samsung_wu = amount[samsung_wu]
 
-        ###스프레드 계산###
-        if '005935' in bid_price.keys() and '005930' in bid_price.keys():
-            bid_samsung = bid_price['005930']  # 매수가격
-            bid_samsung_wu = bid_price['005935']
-            ask_samsung = ask_price['005930']    #매도가격
-            ask_samsung_wu = ask_price['005935']
-            self.spread_4.append(bid_samsung*hedge_ratio_7-bid_samsung_wu*hedge_ratio_8 )             
-            
-            if len(self.spread_4) <= 150:
-                print(len(self.spread_4),'/150')
+        spread = 10000
 
-
-        ###이동평균 계산 후 트레이딩 시작###
-        if len(self.spread_4)>=150:
-
-            spread_4 = pd.Series(self.spread_4)
-            threshold = spread_4.rolling(window=150,center=False).mean()
-
-            print('spread :',round(spread_4.iloc[-1],4), 'threshold :',round((threshold.iloc[-1]),4), '   ///',
-                    round(spread_4.iloc[-1]-(threshold.iloc[-1]),4))
-
-            # if self.time_count % time_term == 0:
-            if spread_4.iloc[-1] > (threshold.iloc[-1]+bid_ask_spread):
-
-                if amount_samsung_wu >=1:
-                    print('short position')
-                    self.sell_samsung_wu(ask_samsung_wu,leverage*hedge_ratio_8)
-                    self.buy_samsung(bid_samsung,leverage*hedge_ratio_7)
-
-            elif spread_4.iloc[-1] < (threshold.iloc[-1]-bid_ask_spread)  :
-
-                if amount_samsung >=1:
-                    print('long position')
-                    self.sell_samsung(ask_samsung,leverage*hedge_ratio_7)
-                    self.buy_samsung_wu(bid_samsung_wu,leverage*hedge_ratio_8)                  
-            # self.time_count += 1
-            # print('time to trade : ',  time_term - (self.time_count)%time_term)
- 
-            # if (threshold.iloc[-1]-5) < spread_1.iloc[-1] < (threshold.iloc[-1]+5) :
-            if (threshold.iloc[-1]-100)< spread_4.iloc[-1] < (threshold.iloc[-1]+100) :
-                print('close position')                    
-                if amount_samsung < init_count :
-                    self.sell_samsung_wu(ask_samsung_wu,(init_count-amount_samsung))
-                    self.buy_samsung(bid_samsung,(init_count-amount_samsung))
-                elif amount[samsung] > init_count :
-                    self.sell_samsung(ask_samsung,(amount_samsung-init_count))
-                    self.buy_samsung_wu(bid_samsung_wu,(amount_samsung-init_count))
-                        
+        if samsung in amount.keys():
+            amount_samsung = amount[samsung]
         else:
-            pass
+            amount_samsung = 0
 
+        if samsung_wu in amount.keys():
+            amount_samsung_wu = amount[samsung_wu]
+        else:
+            amount_samsung_wu = 0
+
+
+        ### get bid ask###
+        if samsung in bid_price.keys() and samsung_wu in bid_price.keys():            
+            bid_samsung = bid_price[samsung]  # 매수가격
+            bid_samsung_wu = bid_price[samsung_wu]
+            ask_samsung = ask_price[samsung]  # 매도가격
+            ask_samsung_wu = ask_price[samsung_wu]
+
+
+            if ask_samsung > bid_samsung_wu + spread + 200 and amount_samsung_wu<=9:  
+                print('short position')   
+                self.sell_samsung(ask_samsung,leverage)
+                self.buy_samsung_wu(bid_samsung_wu,leverage)
+
+            elif ask_samsung_wu > bid_samsung and amount_samsung <=9 :
+                print('long position')   
+                self.sell_samsung_wu(ask_samsung_wu,leverage)
+                self.buy_samsung(bid_samsung,leverage)                  
+
+
+            if amount_samsung > init_count and  ask_samsung == bid_samsung_wu + spread +100:
+                print('close position')                    
+                self.sell_samsung(ask_samsung,(amount_samsung-init_count))
+                self.buy_samsung_wu(bid_samsung_wu,(amount_samsung-init_count))
+
+            elif amount_samsung_wu > init_count and  bid_samsung +spread +100== ask_samsung_wu :
+                print('close position')
+                self.sell_samsung_wu(ask_samsung_wu,(amount_samsung_wu-init_count))
+                self.buy_samsung(bid_samsung,(amount_samsung_wu-init_count))
         print('')
 
 
@@ -576,11 +559,11 @@ class Algos(QMainWindow, form_class):
 
 
         ### get bid ask###
-        if '364690' in bid_price.keys() and '365040' in bid_price.keys():            
-            bid_kodex_active = bid_price['364690']  # 매수가격
-            bid_tiger_active = bid_price['365040']
-            ask_kodex_active = ask_price['364690']  # 매도가격
-            ask_tiger_active = ask_price['365040']
+        if 'KODEX 혁신기술테마액티브' in bid_price.keys() and 'TIGER AI코리아그로스액티브' in bid_price.keys():            
+            bid_kodex_active = bid_price['KODEX 혁신기술테마액티브']  # 매수가격
+            bid_tiger_active = bid_price['TIGER AI코리아그로스액티브']
+            ask_kodex_active = ask_price['KODEX 혁신기술테마액티브']  # 매도가격
+            ask_tiger_active = ask_price['TIGER AI코리아그로스액티브']
 
 
             if ask_kodex_active > bid_tiger_active and amount_tiger_active<=59:  
