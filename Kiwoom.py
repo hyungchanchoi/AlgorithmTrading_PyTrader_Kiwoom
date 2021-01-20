@@ -164,7 +164,7 @@ class Kiwoom(QAxWidget):
             #     "GetCommRealData(QString,int)", code, 12)
             # self.price[code] = int(temp_price)
             # self.rate[code] = float(temp_rate)
-            name = self.GetMasterCodeName(code)
+            name = self.ocx.dynamicCall('GetMasterCodeName(QString)',str(code))
             self.bid_price[name] = abs(int(temp_bid_price))
             self.ask_price[name] = abs(int(temp_ask_price))
             

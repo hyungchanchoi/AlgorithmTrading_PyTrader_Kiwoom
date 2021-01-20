@@ -480,7 +480,7 @@ class Algos(QMainWindow, form_class):
         
         ###초기 설정###
         leverage = 1
-        init_count = 10
+        init_count = 5
         hedge_ratio_7 = 1
         hedge_ratio_8 = 1
 
