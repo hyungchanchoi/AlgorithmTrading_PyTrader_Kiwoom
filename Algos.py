@@ -312,23 +312,23 @@ class Algos(QMainWindow, form_class):
             ask_tiger_200 = ask_price[tiger_200]
 
 
-            if ask_kodex_200 > bid_tiger_200 +spread+10 and amount_tiger_200<=19:  
+            if ask_kodex_200 -bid_tiger_200 >= spread+10 and amount_tiger_200<=19:  
                 print('short position')   
                 self.sell_kodex200(ask_kodex_200,leverage)
                 self.buy_tiger200(bid_tiger_200,leverage)
 
-            elif ask_tiger_200 > bid_kodex_200 +spread+10 and amount_tiger_200<=19 :
+            elif ask_tiger_200 -bid_kodex_200 >= spread+10 and amount_tiger_200<=19 :
                 print('long position')   
                 self.sell_tiger200(ask_tiger_200,leverage)
                 self.buy_kodex200(bid_kodex_200,leverage)                  
 
 
-            if amount_tiger_200 > init_count and  bid_kodex_200 == ask_tiger_200 + spread :
+            if amount_tiger_200 > init_count and  bid_kodex_200 - ask_tiger_200 <= spread :
                 print('close position')
                 self.sell_tiger200(ask_tiger_200,(amount_tiger_200-init_count))
                 self.buy_kodex200(bid_kodex_200,(amount_tiger_200-init_count))
 
-            elif amount_kodex_200 > init_count and  ask_kodex_200 + spread == bid_tiger_200:
+            elif amount_kodex_200 > init_count and  bid_tiger_200 - ask_kodex_200 <= spread  :
                 print('close position')                    
                 self.sell_kodex200(ask_kodex_200,(amount_kodex_200-init_count))
                 self.buy_tiger200(bid_tiger_200,(amount_kodex_200-init_count))
