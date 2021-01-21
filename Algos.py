@@ -27,7 +27,7 @@ class Algos(QMainWindow, form_class):
 
 ########변수####################     
         # 공통
-        self.time_count = 0
+        self.profit = 0
         self.bid_price = {}
         self.ask_price = {}
 
@@ -46,7 +46,7 @@ class Algos(QMainWindow, form_class):
         code_two = '069500;102110'
         code_five = '005930;005935'
         code_six = '364690;365040'
-        codes = code_two + ';' + code_five + ';' + code_six
+        codes = code_two # + ';' + code_five + ';' + code_six
         self.kiwoom.subscribe_stock_conclusion('2000',codes)
 ############################################
 
@@ -287,11 +287,13 @@ class Algos(QMainWindow, form_class):
 
         ###초기 설정###
         leverage = 1
-        init_count = 10
+        init_count = 20
 
         kodex_200 = 'KODEX 200' 
         tiger_200 = 'TIGER 200'
-        spread = 20
+        
+        start_spread = 15
+        finish_spread = -5
 
         if kodex_200 in amount.keys():
             amount_kodex_200 = amount[kodex_200]
@@ -312,26 +314,20 @@ class Algos(QMainWindow, form_class):
             ask_tiger_200 = ask_price[tiger_200]
 
 
-            if ask_kodex_200 -bid_tiger_200 >= spread+10 and amount_tiger_200<=19:  
-                print('short position')   
+            if ask_kodex_200 - bid_tiger_200 >= start_spread and amount_tiger_200 <= (init_count*2-leverage) :  
+                print('start position')   
                 self.sell_kodex200(ask_kodex_200,leverage)
                 self.buy_tiger200(bid_tiger_200,leverage)
+                self.profit += ask_kodex_200 - bid_tiger_200
 
-            elif ask_tiger_200 -bid_kodex_200 >= spread+10 and amount_tiger_200<=19 :
-                print('long position')   
-                self.sell_tiger200(ask_tiger_200,leverage)
-                self.buy_kodex200(bid_kodex_200,leverage)                  
-
-
-            if amount_tiger_200 > init_count and  bid_kodex_200 - ask_tiger_200 <= spread :
+            elif amount_tiger_200 > init_count and  ask_tiger_200 - bid_kodex_200 >= finish_spread :
                 print('close position')
                 self.sell_tiger200(ask_tiger_200,(amount_tiger_200-init_count))
                 self.buy_kodex200(bid_kodex_200,(amount_tiger_200-init_count))
+                self.profit += ask_tiger_200 - bid_kodex_200
+           
+        print('profit :',self.profit)
 
-            elif amount_kodex_200 > init_count and  bid_tiger_200 - ask_kodex_200 <= spread  :
-                print('close position')                    
-                self.sell_kodex200(ask_kodex_200,(amount_kodex_200-init_count))
-                self.buy_tiger200(bid_tiger_200,(amount_kodex_200-init_count))
 
                     
 ################################################### Algo_3##########################################################

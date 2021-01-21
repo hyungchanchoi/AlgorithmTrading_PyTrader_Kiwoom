@@ -140,7 +140,7 @@ class Kiwoom(QAxWidget):
                 # earning = self.GetCommData(trcode, rqname, i, "손익금액")
                 self.amount[code] = int(amount)
                 # self.earning[code] = int(earning)
-                time.sleep(0.5)                            
+                        
             print('AMOUNT :',self.amount)
             # print('Earnings :',self.earning)
         self.login_event_loop.exit()
