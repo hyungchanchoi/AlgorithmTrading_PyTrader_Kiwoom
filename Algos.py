@@ -54,9 +54,17 @@ class Algos(QMainWindow, form_class):
 
 
 ############종목수량, 매수/매도호가 #############
-    def get_amount(self):
+    def get_data(self):
+
+        bid_price = self.kiwoom.bid_price
+        ask_price = self.kiwoom.ask_price      
         self.kiwoom.get_amount()    
-        return self.kiwoom.amount
+        # if self.check :
+        #     self.kiwoom.get_amount()    
+        # else:
+        #     pass
+        return self.kiwoom.amount,bid_price, ask_price
+
     
     def get_price(self):
         bid_price = self.kiwoom.bid_price
@@ -64,7 +72,7 @@ class Algos(QMainWindow, form_class):
         # earning = self.kiwoom.earning
         return bid_price, ask_price
 
-    def get_data(self):
+    def get_price(self):
         import win32com.client
         # 연결 여부 체크
         objCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
@@ -280,7 +288,7 @@ class Algos(QMainWindow, form_class):
 
 
 ################################################### Algo_2##########################################################
-    def two(self,bid_price,ask_price):
+    def two(self,amount,bid_price,ask_price):
         print('[algo_two]-----------------------------------------------------------------------------')
         
         ### 알고리즘 요약
@@ -299,8 +307,6 @@ class Algos(QMainWindow, form_class):
         
         start_spread = 15
         finish_spread = -5
-
-        amount = self.amount
 
         if kodex_200 in amount.keys():
             amount_kodex_200 = amount[kodex_200]
