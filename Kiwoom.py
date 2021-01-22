@@ -147,7 +147,7 @@ class Kiwoom(QAxWidget):
                 self.amount[code] = int(amount)
                 # self.earning[code] = int(earning)
                         
-            print('AMOUNT :',self.amount)
+            # print('AMOUNT :',self.amount)
             # print('Earnings :',self.earning)
         # self.login_event_loop.exit()
             

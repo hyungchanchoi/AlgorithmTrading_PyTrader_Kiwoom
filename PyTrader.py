@@ -29,8 +29,15 @@ if __name__ == "__main__":
 
         #### num,bid,ask of stock ####
         # algo.kiwoom.get_profit()
-        amount,bid_price, ask_price = algo.get_data()
+        bid_price,ask_price = algo.get_price()
+        
+        if algo.check :
+            algo.amount = algo.get_amount()
+        else:
+            pass
 
+
+        print('AMOUNT :',algo.amount)
         print('bid_price',bid_price)
         print('ask_price',ask_price)
 
@@ -38,14 +45,14 @@ if __name__ == "__main__":
         ### Algorithm ###
         # algo.zero(amount,bid_price,ask_price)
         # algo.one()
-        algo.two(amount,bid_price,ask_price)
+        algo.two(bid_price,ask_price)
         # algo.three(amount,bid_price,ask_price)    
         # algo.four(amount,bid_price,ask_price)
         # algo.five(amount, bid_price, ask_price)
         # algo.six(amount,bid_price,ask_price)
 
         # 실행되는 알고리즘 개수마다 쉬어줘야함
-        time.sleep(2)
+        time.sleep(0.25)
 
     app.exec_() 
 

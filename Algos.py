@@ -27,7 +27,9 @@ class Algos(QMainWindow, form_class):
 
 ########변수####################     
         # 공통
+        self.check = True
         self.profit = 0
+        self.amount = {}
         self.bid_price = {}
         self.ask_price = {}
 
@@ -52,14 +54,17 @@ class Algos(QMainWindow, form_class):
 
 
 ############종목수량, 매수/매도호가 #############
-    def get_data(self):
-        self.kiwoom.get_amount()
+    def get_amount(self):
+        self.kiwoom.get_amount()    
+        return self.kiwoom.amount
+    
+    def get_price(self):
         bid_price = self.kiwoom.bid_price
         ask_price = self.kiwoom.ask_price
         # earning = self.kiwoom.earning
-        return self.kiwoom.amount,bid_price, ask_price
+        return bid_price, ask_price
 
-    def get_price(self):
+    def get_data(self):
         import win32com.client
         # 연결 여부 체크
         objCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
@@ -275,7 +280,7 @@ class Algos(QMainWindow, form_class):
 
 
 ################################################### Algo_2##########################################################
-    def two(self,amount,bid_price,ask_price):
+    def two(self,bid_price,ask_price):
         print('[algo_two]-----------------------------------------------------------------------------')
         
         ### 알고리즘 요약
@@ -295,6 +300,8 @@ class Algos(QMainWindow, form_class):
         start_spread = 15
         finish_spread = -5
 
+        amount = self.amount
+
         if kodex_200 in amount.keys():
             amount_kodex_200 = amount[kodex_200]
         else:
@@ -313,18 +320,21 @@ class Algos(QMainWindow, form_class):
             ask_kodex_200 = ask_price[kodex_200]  # 매도가격
             ask_tiger_200 = ask_price[tiger_200]
 
+            self.check = False
 
             if ask_kodex_200 - bid_tiger_200 >= start_spread and amount_tiger_200 <= (init_count*2-leverage) :  
                 print('start position')   
                 self.sell_kodex200(ask_kodex_200,leverage)
                 self.buy_tiger200(bid_tiger_200,leverage)
                 self.profit += ask_kodex_200 - bid_tiger_200
+                self.check = True
 
             elif amount_tiger_200 > init_count and  ask_tiger_200 - bid_kodex_200 >= finish_spread :
                 print('close position')
                 self.sell_tiger200(ask_tiger_200,(amount_tiger_200-init_count))
                 self.buy_kodex200(bid_kodex_200,(amount_tiger_200-init_count))
                 self.profit += ask_tiger_200 - bid_kodex_200
+                self.check = True
            
         print('profit :',self.profit)
 
