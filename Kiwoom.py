@@ -78,8 +78,8 @@ class Kiwoom(QAxWidget):
 
     def get_amount(self):
         # TR 요청
-        # self.request_opw00018()
-        self.request_opw00004()
+        self.request_opw00018()  #매매가능수량
+        # self.request_opw00004()    #종목수량
 
     def request_opt10074(self):
         self.SetInputValue("계좌번호", self.account)
@@ -93,7 +93,7 @@ class Kiwoom(QAxWidget):
         self.SetInputValue("비밀번호", "")
         self.SetInputValue("비밀번호입력매체구분", "00")
         self.SetInputValue("조회구분", 1)
-        self.CommRqData("총평가손익금액", "opw00018", 0, "9002")
+        self.CommRqData("매매가능수량", "opw00018", 0, "9002")
         self.login_event_loop.exec()
 
     def request_opw00004(self):
@@ -121,16 +121,22 @@ class Kiwoom(QAxWidget):
             except:
                 pass
 
-        if rqname == "총평가손익금액":
-            cash = self.GetCommData(trcode, rqname, 0, "총평가손익금액")
-            self.login_event_loop.exit()
-            try:
-                self.cash= int(cash)
-                print('총평가손익금액 :',self.cash )
-            except:
-                pass
+        if rqname == "매매가능수량":
+            rows = self.GetRepeatCnt(trcode, rqname)
+            
+            self.amount = {}
+            for i in range(rows):
+                code = self.GetCommData(trcode, rqname, i, "종목명")
+                amount = self.GetCommData(trcode, rqname, i, "매매가능수량")
+                # earning = self.GetCommData(trcode, rqname, i, "손익금액")
+                self.amount[code] = int(amount)
+                # self.earning[code] = int(earning)
+                        
+            print('AMOUNT :',self.amount)
+            # print('Earnings :',self.earning)
+        self.login_event_loop.exit()
 
-        elif rqname == "계좌평가현황":
+        if rqname == "계좌평가현황":
             rows = self.GetRepeatCnt(trcode, rqname)
             
             self.amount = {}
@@ -143,7 +149,7 @@ class Kiwoom(QAxWidget):
                         
             print('AMOUNT :',self.amount)
             # print('Earnings :',self.earning)
-        self.login_event_loop.exit()
+        # self.login_event_loop.exit()
             
 ##########################################################################
 
