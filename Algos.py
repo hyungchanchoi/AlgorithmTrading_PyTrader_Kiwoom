@@ -27,7 +27,7 @@ class Algos(QMainWindow, form_class):
 
 ########변수####################     
         # 공통
-        self.check = True
+        self.check = None
         self.profit = 0
         self.amount = {}
         self.bid_price = {}
@@ -48,7 +48,7 @@ class Algos(QMainWindow, form_class):
         code_two = '069500;102110'
         code_five = '005930;005935'
         code_six = '364690;365040'
-        codes = code_two # + ';' + code_five + ';' + code_six
+        codes = code_six #code_two  + ';' + code_five + ';' + 
         self.kiwoom.subscribe_stock_conclusion('2000',codes)
 ############################################
 
@@ -554,7 +554,10 @@ class Algos(QMainWindow, form_class):
         
         ###초기 설정###
         leverage = 1
-        init_count = 30
+        init_count = 50
+
+        short_spread = 100
+        long_spread = - 85
 
         kodex_active = 'KODEX 혁신기술테마액티브' 
         tiger_active = 'TIGER AI코리아그로스액티브'
@@ -578,25 +581,27 @@ class Algos(QMainWindow, form_class):
             ask_tiger_active = ask_price['TIGER AI코리아그로스액티브']
 
 
-            if ask_kodex_active > bid_tiger_active and amount_tiger_active<=59:  
-                print('short position')   
+            if ask_kodex_active - bid_tiger_active > short_spread and init_count < amount_tiger_active<= init_count * 2 - leverage:  
+                print('start short position')   
                 self.sell_kodex(ask_kodex_active,leverage)
                 self.buy_tiger(bid_tiger_active,leverage)
-
-            elif ask_tiger_active > bid_kodex_active and amount_tiger_active<=59 :
-                print('long position')   
-                self.sell_tiger(ask_tiger_active,leverage)
-                self.buy_kodex(bid_kodex_active,leverage)                  
-
-
-            if amount_kodex_active > init_count and  ask_kodex_active == bid_tiger_active:
-                print('close position')                    
-                self.sell_kodex(ask_kodex_active,(amount_kodex_active-init_count))
-                self.buy_tiger(bid_tiger_active,(amount_kodex_active-init_count))
-            elif amount_tiger_active > init_count and  bid_kodex_active == ask_tiger_active :
-                print('close position')
+                self.check = 'short'
+            if ask_tiger_active - bid_kodex_active > long_spread  and amount_tiger_active > init_count and self.check =='short' :
+                print('close short position')
                 self.sell_tiger(ask_tiger_active,(amount_tiger_active-init_count))
                 self.buy_kodex(bid_kodex_active,(amount_tiger_active-init_count))
+
+            
+            if ask_tiger_active -bid_kodex_active > short_spread and init_count < amount_kodex_active<=init_count * 2 - leverage :
+                print('start long position')   
+                self.sell_tiger(ask_tiger_active,leverage)
+                self.buy_kodex(bid_kodex_active,leverage)                  
+                self.check = 'long'
+            if ask_kodex_active - bid_tiger_active > long_spread  and amount_kodex_active > init_count and self.check =='long' :
+                print('close long position')                    
+                self.sell_kodex(ask_kodex_active,(amount_kodex_active-init_count))
+                self.buy_tiger(bid_tiger_active,(amount_kodex_active-init_count))
+
                     
 
         print('')
