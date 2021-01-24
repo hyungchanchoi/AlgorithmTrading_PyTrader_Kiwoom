@@ -48,7 +48,8 @@ class Algos(QMainWindow, form_class):
         code_two = '069500;102110'
         code_five = '005930;005935'
         code_six = '364690;365040'
-        codes = code_six #code_two  + ';' + code_five + ';' + 
+        code_seven = '069500;102780'
+        codes = code_seven #code_two  + ';' + code_five + ';' + 
         self.kiwoom.subscribe_stock_conclusion('2000',codes)
 ############################################
 
@@ -174,6 +175,12 @@ class Algos(QMainWindow, form_class):
         
     def sell_samsung_wu(self,price,leverage):
         self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '005935', leverage, price, '00', "")
+
+    def buy_samsung_group(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 1, '102780', leverage, price, '00', "")
+        
+    def sell_samsung_group(self,price,leverage):
+        self.kiwoom.SendOrder("send_order_req", "0101", self.account, 2, '102780', leverage, price, '00', "")
 ###################################################################################################################
 
 
@@ -344,8 +351,7 @@ class Algos(QMainWindow, form_class):
            
         print('profit :',self.profit)
 
-
-                    
+            
 ################################################### Algo_3##########################################################
     def three(self,amount,bid_price,ask_price):
         print('[algo_three]----------------------------------------------------------------------')   
@@ -556,8 +562,8 @@ class Algos(QMainWindow, form_class):
         leverage = 1
         init_count = 50
 
-        short_spread = 100
-        long_spread = - 85
+        short_spread = 125
+        long_spread = - 65
 
         kodex_active = 'KODEX 혁신기술테마액티브' 
         tiger_active = 'TIGER AI코리아그로스액티브'
@@ -603,5 +609,70 @@ class Algos(QMainWindow, form_class):
                 self.buy_tiger(bid_tiger_active,(amount_kodex_active-init_count))
 
                     
+
+        print('')
+
+
+################################################### Algo_7########################################################## 
+
+    def seven(self,amount, bid_price, ask_price):
+        print('[algo_seven]--------------------------------------------------------------------')   
+        
+        ### 알고리즘 요약
+        # 1. kodex200와 samsung_group 매수호가(매수가격) 스프레드가 
+        #    지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
+        
+        ###초기 설정###
+        leverage = 1
+        init_count = 40
+
+        short_spread = 32980
+        long_spread = - -32510
+
+        kodex200 = 'KODEX 200' 
+        samsung_group = 'KODEX 삼성그룹'
+
+        if kodex200 in amount.keys():
+            amount_kodex200 = amount[kodex200]
+        else:
+            amount_kodex200 = 0
+
+        if samsung_group in amount.keys():
+            amount_samsung_group = amount[samsung_group]
+        else:
+            amount_samsung_group = 0
+
+
+        ### get bid ask###
+        if kodex200 in bid_price.keys() and samsung_group in bid_price.keys():            
+            bid_kodex200 = bid_price[kodex200]  # 매수가격
+            bid_samsung_group = bid_price[samsung_group]
+            ask_kodex200 = ask_price[kodex200]  # 매도가격
+            ask_samsung_group = ask_price[samsung_group]
+
+
+            if ask_kodex200 - bid_samsung_group > short_spread and init_count <= amount_samsung_group<= init_count * 2 - leverage:  
+                print('start short position')   
+                self.sell_kodex200(ask_kodex200,leverage)
+                self.buy_samsung_group(bid_samsung_group,leverage)
+                self.check = 'short'
+            if ask_samsung_group - bid_kodex200 > long_spread  and amount_samsung_group > init_count and self.check =='short' :
+                print('close short position')
+                self.sell_samsung_group(ask_samsung_group,(amount_samsung_group-init_count))
+                self.buy_kodex200(bid_kodex200,(amount_samsung_group-init_count))
+
+            
+            if ask_samsung_group -bid_kodex200 > short_spread and init_count <= amount_kodex200<=init_count * 2 - leverage :
+                print('start long position')   
+                self.sell_samsung_group(ask_samsung_group,leverage)
+                self.buy_kodex200(bid_kodex200,leverage)                  
+                self.check = 'long'
+            if ask_kodex200 - bid_samsung_group > long_spread  and amount_kodex200 > init_count and self.check =='long' :
+                print('close long position')                    
+                self.sell_kodex200(ask_kodex200,(amount_kodex200-init_count))
+                self.buy_samsung_group(bid_samsung_group,(amount_kodex200-init_count))
 
         print('')
