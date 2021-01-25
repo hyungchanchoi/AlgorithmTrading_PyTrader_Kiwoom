@@ -28,6 +28,7 @@ class Algos(QMainWindow, form_class):
 ########변수####################     
         # 공통
         self.check = None
+        self.count = 0
         self.profit = 0
         self.amount = {}
         self.bid_price = {}
@@ -41,6 +42,9 @@ class Algos(QMainWindow, form_class):
         self.spread_3 = []
         # algo_4 
         self.spread_4 = []
+        # algo_7 
+        self.short_spread_7 = []
+        self.long_spread_7 = []
 #################################
 
 
@@ -56,7 +60,6 @@ class Algos(QMainWindow, form_class):
 
 ############종목수량, 매수/매도호가 #############
     def get_data(self):
-
         bid_price = self.kiwoom.bid_price
         ask_price = self.kiwoom.ask_price      
         self.kiwoom.get_amount()    
@@ -629,8 +632,8 @@ class Algos(QMainWindow, form_class):
         leverage = 1
         init_count = 40
 
-        short_spread = 32980
-        long_spread = - -32510
+        short_spread = 32900
+        long_spread = - -32700
 
         kodex200 = 'KODEX 200' 
         samsung_group = 'KODEX 삼성그룹'
@@ -652,25 +655,43 @@ class Algos(QMainWindow, form_class):
             bid_samsung_group = bid_price[samsung_group]
             ask_kodex200 = ask_price[kodex200]  # 매도가격
             ask_samsung_group = ask_price[samsung_group]
+            print('short spread :',ask_kodex200 - bid_samsung_group)
+            print('long spread :',ask_samsung_group - bid_kodex200)
+            self.short_spread_7.append(ask_samsung_group - bid_kodex200)
+            self.long_spread_7.append(ask_kodex200 - bid_samsung_group)
+        
+            if len(self.short_spread_7) < 300 :
+                print(self.count,'/',300)
+                self.count +=1
 
+        if len(self.short_spread_7) >= 300:
+            short_spread_7 = pd.Series(self.short_spread_7)
+            long_spread_7 = pd.Series(self.long_spread_7)
+            short_spread_7 = short_spread_7.rolling(window=300,center=False).mean()
+            long_spread_7 = long_spread_7.rolling(window=300,center=False).mean()
+            short_spread = -short_spread_7 + 50
+            long_spread = -long_spread_7 + 50
+            print('ma spread :',short_spread_7,long_spread_7)
 
             if ask_kodex200 - bid_samsung_group > short_spread and init_count <= amount_samsung_group<= init_count * 2 - leverage:  
                 print('start short position')   
                 self.sell_kodex200(ask_kodex200,leverage)
                 self.buy_samsung_group(bid_samsung_group,leverage)
                 self.check = 'short'
-            if ask_samsung_group - bid_kodex200 > long_spread  and amount_samsung_group > init_count and self.check =='short' :
+                self.long_spread = short_spread_7
+            if ask_samsung_group - bid_kodex200 > self.long_spread  and amount_samsung_group > init_count and self.check =='short' :
                 print('close short position')
                 self.sell_samsung_group(ask_samsung_group,(amount_samsung_group-init_count))
                 self.buy_kodex200(bid_kodex200,(amount_samsung_group-init_count))
 
             
-            if ask_samsung_group -bid_kodex200 > short_spread and init_count <= amount_kodex200<=init_count * 2 - leverage :
+            if ask_samsung_group -bid_kodex200 > long_spread and init_count <= amount_kodex200<=init_count * 2 - leverage :
                 print('start long position')   
                 self.sell_samsung_group(ask_samsung_group,leverage)
                 self.buy_kodex200(bid_kodex200,leverage)                  
                 self.check = 'long'
-            if ask_kodex200 - bid_samsung_group > long_spread  and amount_kodex200 > init_count and self.check =='long' :
+                self.short_spread = long_spread_7
+            if ask_kodex200 - bid_samsung_group > self.short_spread  and amount_kodex200 > init_count and self.check =='long' :
                 print('close long position')                    
                 self.sell_kodex200(ask_kodex200,(amount_kodex200-init_count))
                 self.buy_samsung_group(bid_samsung_group,(amount_kodex200-init_count))
