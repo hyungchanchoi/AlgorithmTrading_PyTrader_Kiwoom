@@ -632,8 +632,8 @@ class Algos(QMainWindow, form_class):
         leverage = 1
         init_count = 40
 
-        short_spread = 32900
-        long_spread = - -32700
+        # short_spread = 32900
+        # long_spread = - -32700
 
         kodex200 = 'KODEX 200' 
         samsung_group = 'KODEX 삼성그룹'
@@ -667,10 +667,10 @@ class Algos(QMainWindow, form_class):
         if len(self.short_spread_7) >= 150:
             short_spread_7 = pd.Series(self.short_spread_7)
             long_spread_7 = pd.Series(self.long_spread_7)
-            short_spread_7.iloc[-1] = short_spread_7.rolling(window=150,center=False).mean()
-            long_spread_7.iloc[-1] = long_spread_7.rolling(window=150,center=False).mean()
-            short_spread = -short_spread_7 + 50
-            long_spread = -long_spread_7 + 50
+            short_spread_7 = short_spread_7.rolling(window=150,center=False).mean()
+            long_spread_7 = long_spread_7.rolling(window=150,center=False).mean()
+            short_spread = -short_spread_7.iloc[-1] + 50
+            long_spread = -long_spread_7.iloc[-1] + 50
             print('ma spread :',short_spread,long_spread)
 
             if ask_kodex200 - bid_samsung_group > short_spread and init_count <= amount_samsung_group<= init_count * 2 - leverage:  
