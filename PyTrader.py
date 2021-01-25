@@ -46,7 +46,7 @@ if __name__ == "__main__":
         algo.seven(amount,bid_price,ask_price)
 
         # 실행되는 알고리즘 개수마다 쉬어줘야함
-        time.sleep(1)
+        time.sleep(2)
 
     app.exec_() 
 
