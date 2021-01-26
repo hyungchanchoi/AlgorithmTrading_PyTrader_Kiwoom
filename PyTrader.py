@@ -44,6 +44,7 @@ if __name__ == "__main__":
         # algo.five(amount, bid_price, ask_price)
         # algo.six(amount,bid_price,ask_price)
         algo.seven(amount,bid_price,ask_price)
+        algo.eight(amount,bid_price,ask_price)
 
         # 실행되는 알고리즘 개수마다 쉬어줘야함
         time.sleep(2)

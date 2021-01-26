@@ -53,7 +53,8 @@ class Algos(QMainWindow, form_class):
         code_five = '005930;005935'
         code_six = '364690;365040'
         code_seven = '069500;102780'
-        codes = code_seven #code_two  + ';' + code_five + ';' + 
+        code_eight = '069500;364690'
+        codes = code_eight #code_two  + ';' + code_five + ';' + 
         self.kiwoom.subscribe_stock_conclusion('2000',codes)
 ############################################
 
@@ -695,5 +696,93 @@ class Algos(QMainWindow, form_class):
                 print('close long position')                    
                 self.sell_kodex200(ask_kodex200,(amount_kodex200-init_count))
                 self.buy_samsung_group(bid_samsung_group,(amount_kodex200-init_count))
+
+        print('')
+
+
+################################################### Algo_8########################################################## 
+
+    def eight(self,amount, bid_price, ask_price):
+        print('[algo_eight]--------------------------------------------------------------------')   
+        
+        ### 알고리즘 요약
+        # 1. kodex200와 kodex_active 매수호가(매수가격) 스프레드가 
+        #    지난 60개의 데이터 이동평균과 달라지는 경우,
+        # 2. 매수호가,매도호가 스프레드를 고려하여 threshold에 반영.
+        # 3. 숏 또는 롱 포지션 취한 후, 
+        # 4. 반대 포지션으로 청산
+        
+        ###초기 설정###
+        leverage = 1
+        init_count = 40
+
+        # short_spread = 32900
+        # long_spread = - -32700
+
+        kodex200 = 'KODEX 200' 
+        kodex_active = 'KODEX 혁신기술테마액티브'
+
+        if kodex200 in amount.keys():
+            amount_kodex200 = amount[kodex200]
+        else:
+            amount_kodex200 = 0
+
+        if kodex_active in amount.keys():
+            amount_kodex_active = amount[kodex_active]
+        else:
+            amount_kodex_active = 0
+
+
+        ### get bid ask###
+        if kodex200 in bid_price.keys() and kodex_active in bid_price.keys():            
+            bid_kodex200 = bid_price[kodex200]  # 매수가격
+            bid_kodex_active = bid_price[kodex_active]
+            ask_kodex200 = ask_price[kodex200]  # 매도가격
+            ask_kodex_active = ask_price[kodex_active]
+
+            print('short spread :',ask_kodex200 - bid_kodex_active)
+            print('long spread :',ask_kodex_active - bid_kodex200)
+            self.short_spread_7.append(ask_kodex_active - bid_kodex200)
+            self.long_spread_7.append(ask_kodex200 - bid_kodex_active)
+        
+            if len(self.short_spread_7) < 300 :
+                print(self.count,'/',300)
+                self.count +=1
+
+        if len(self.short_spread_7) >= 301:
+
+            del short_spread_7[0]
+            del long_spread_7[0]
+
+            short_spread_7 = pd.Series(self.short_spread_7)
+            long_spread_7 = pd.Series(self.long_spread_7)
+            short_spread_7 = short_spread_7.rolling(window=300,center=False).mean()
+            long_spread_7 = long_spread_7.rolling(window=300,center=False).mean()
+            short_spread = -short_spread_7.iloc[-1] 
+            long_spread = -long_spread_7.iloc[-1] 
+            print('ma spread :',short_spread,long_spread)
+
+            if ask_kodex200 - bid_kodex_active > short_spread +100 and init_count <= amount_kodex_active<= init_count * 2 - leverage:  
+                print('start short position')   
+                self.sell_kodex200(ask_kodex200,leverage)
+                self.buy_kodex_active(bid_kodex_active,leverage)
+                self.check = 'short'
+                self.long_spread = short_spread_7
+            if ask_kodex_active - bid_kodex200 > self.long_spread+100 and amount_kodex_active > init_count and self.check =='short' :
+                print('close short position')
+                self.sell_kodex_active(ask_kodex_active,(amount_kodex_active-init_count))
+                self.buy_kodex200(bid_kodex200,(amount_kodex_active-init_count))
+
+            
+            if ask_kodex_active -bid_kodex200 > long_spread +100 and init_count <= amount_kodex200<=init_count * 2 - leverage :
+                print('start long position')   
+                self.sell_kodex_active(ask_kodex_active,leverage)
+                self.buy_kodex200(bid_kodex200,leverage)                  
+                self.check = 'long'
+                self.short_spread = long_spread_7
+            if ask_kodex200 - bid_kodex_active > self.short_spread +100 and amount_kodex200 > init_count and self.check =='long' :
+                print('close long position')                    
+                self.sell_kodex200(ask_kodex200,(amount_kodex200-init_count))
+                self.buy_kodex_active(bid_kodex_active,(amount_kodex200-init_count))
 
         print('')
